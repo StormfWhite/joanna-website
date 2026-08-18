@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sophisterium</title>
+  <meta name="description" content="Private classes, courses, blogs, videos, and audiobooks for Latin and Ancient Greek." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #fdfcf9;           /* softer, modern cream background */
+  --panel: #fffdf5;        /* main panels */
+  --panel-2: #f5f2e9;      /* subtle contrast cream */
+
+  --text: #2f2a26;         /* dark neutral brown-gray for legibility */
+  --muted: #6f665c;        /* muted gray-brown for subtext */
+
+  --brand: #d6b14a;        /* refined gold (less yellow, more rich) */
+  --brand-strong: #b88a0e; /* deeper gold for hover/CTA */
+  --accent: #E0B745;       /* soft accent gold */
+
+  --danger: #c94a4a;       /* warmer red for modern feel */
+  
+  /* 💙 Modernized blue for cards */
+  --card-bg: #fdfcf9;       /* airy light blue */
+  --card-border: #74adc7;   /* subtle pastel border */
+  --text-body: #f2f6fb;  
+  --card-hover: #e6eef9;    /* hover lift */
+  
+  --shadow: 0 6px 20px rgba(0,0,0,0.08);  /* softer, modern shadow */
+  --radius: 12px;           /* slightly smaller radius for flatter look */
+}
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    img { max-width: 100%; display: block; border-radius: 12px; }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { color: var(--brand-strong); }
+
+    .container { width: min(1150px, 92vw); margin: 0 auto; }
+
+    /* Top Nav */
+.nav {
+  position: relative; /* not sticky */
+  top: auto;
+  backdrop-filter: none;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-2);
+}
+
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .3px; }
+    .brand .dot { width: 12px; height: 12px; border-radius: 24px; background: linear-gradient(135deg, var(--brand), var(--accent)); box-shadow: 0 0 20px rgba(138,169,255,.6); }
+    .nav a.btn { padding: 10px 16px; background: var(--brand-strong); color: #fff; border-radius: 999px; box-shadow: var(--shadow); font-weight: 700; }
+    .nav a.btn:hover { background: #4463ff; }
+    .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+/* Small book icon next to the dot */
+.brand .logo { margin-left: 6px; font-size: 16px; line-height: 1; }
+
+/* Keep nav layout consistent */
+.nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.nav-links { 
+  display: flex; 
+  gap: 18px; 
+  align-items: center;       /* vertical center all items */
+  flex-wrap: wrap; 
+}
+
+.nav-links .nav-link,
+.nav-links > a.btn {         /* target top-level links and CTA button */
+  display: flex;
+  align-items: center;       /* ensures text vertically aligns */
+  height: 100%;              /* fill nav bar height */
+  padding: 0 4px;            /* optional horizontal padding */
+}
+
+.nav-links .nav-link { color: var(--text); text-decoration: none; }
+
+/* Dropdown scaffolding */
+.has-dropdown { position: relative; }
+.dropdown {
+  position: absolute;
+  top: 100%;               /* sits directly under the trigger */
+  left: 0;
+  min-width: 200px;
+  background: var(--panel);
+  border: 1px solid var(--panel-2);
+  border-radius: 4px;      /* square-ish corners */
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+  padding: 4px 0;
+  display: none;           /* no fade/slide; opens instantly */
+  z-index: 20;
+}
+/* Dropdown shows on hover and hides when not hovering */
+.has-dropdown > .dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--panel);
+  border: 1px solid var(--panel-2);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.12);
+  padding: 4px 0;
+  z-index: 20;
+  transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.has-dropdown:hover > .dropdown {
+  display: block;    /* ensures it’s added for accessibility */
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Dropdown items: solid gold highlight on hover */
+.dropdown-item {
+  display: block;
+  padding: 10px 12px;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid #f0e7c8;
+}
+.dropdown-item:last-child { border-bottom: 0; }
+.dropdown-item:hover { background: var(--accent); 
+  color: var(--text); }
+
+/* Arrow: gold + flips when open */
+.nav-link .arrow {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--accent);
+  transition: transform .2s ease;
+}
+.has-dropdown:hover > .nav-link .arrow{ transform: rotate(180deg); }
+
+/* Top-level nav link hover: just gold text (no glow) */
+.nav-links > .nav-link:hover { color: #d4af37; }
+
+/* Hegel goes far right by taking the flexible gap before it */
+.hegel-link { margin-left: auto; }
+
+/* Gold CTA in the nav only (square corners) */
+.nav a.btn {
+  background: var(--accent);
+  color: var(--text);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+  font-weight: 700;
+  padding: 10px 16px;
+}
+.nav a.btn:hover {   background: var(--brand-strong);
+  color: #fff; }
+
+    /* Hero */
+    .hero { padding: 48px 0 28px; }
+    .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: center; }
+    .hero .card { background: radial-gradient(1200px 500px at -10% -40%, rgba(138,169,255,.2), transparent), var(--panel); border: 1px solid rgba(255,255,255,.06); border-radius: var(--radius); padding: 26px; box-shadow: var(--shadow); }
+    .kicker { color: var(--accent); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; font-size: 12px; }
+    h1 { font-size: clamp(28px, 3.3vw, 48px); margin: 8px 0 10px; line-height: 1.06; }
+    .lead { color: var(--muted); font-size: clamp(15px, 1.2vw, 18px); }
+    .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+.btn { 
+  display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 12px; padding: 12px 16px; font-weight: 700;
+  border: 1px solid rgba(0,0,0,.08);   /* soft border for light bg */
+  background: var(--panel);            /* light cream panel look */
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.btn.primary { 
+  background: linear-gradient(135deg, var(--brand-strong), var(--accent));
+  color: #fff;                         /* white text for contrast */
+}
+.btn.primary:hover {
+  background: linear-gradient(135deg, #a97c28, var(--brand-strong));
+}
+.btn.ghost { 
+  background: transparent;
+  border: 1px solid var(--brand-strong);
+  color: var(--brand-strong);
+}
+.btn.ghost:hover {
+  background: var(--brand-strong);
+  color: #fff;
+}
+    .hero img { width: 100%; aspect-ratio: 4/3; object-fit: cover; }
+
+    /* Sections */
+    section { padding: 34px 0; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .section-head h2 { margin: 0; font-size: clamp(22px, 2.2vw, 30px); }
+    .sub { color: var(--muted); }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.card {
+  background: var(--card-bg);       /* soft blue background */
+  box-shadow: var(--shadow);        /* depth without borders */
+  border: 1px solid var(--card-border);                     /* removed border */
+  border-radius: var(--radius);
+  padding: 1rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  background: var(--card-hover);    /* subtle hover shift */
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15); /* slightly stronger shadow */
+  border-color: var(--card-hover);
+}
+.teaching-style {
+  background: var(--text-body);
+  border: none;
+  box-shadow: none;
+  padding: 2rem;        /* increased space inside */
+  max-width: 900px;     /* keeps it from stretching full width */
+  font-size: 1.3rem;
+  color: var(--text);
+  line-height: 1.6;
+  border-radius: var(--radius); /* optional rounded edges */
+}
+.teaching-style h1 {
+  font-size: 2rem;   /* smaller than default h1 */
+  font-weight: 600;    /* not too heavy */
+  line-height: 1.4;    /* adds breathing room */
+  color: var(--text);  /* keeps it on-theme */
+}
+
+/* Full-width blog strips */
+#blogList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.blog-strip {
+  width: 100%;
+  background-color: var(--text-body);
+  border: 1px solid var(--panel-2); /* subtle gold border */
+  padding: 24px;
+  box-sizing: border-box;
+  transition: background 0.3s;
+}
+
+.blog-strip:hover {
+  background-color: var(--card-hover); /* slightly darker cream on hover */
+}
+
+.blog-strip h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.6rem;
+}
+
+.blog-strip h2 a {
+  position: relative;
+  text-decoration: none;        /* no default underline */
+  color: inherit;               /* keep your existing text color */
+  display: inline-block;        /* needed for the animation */
+  transition: transform 0.3s ease;
+}
+
+.blog-strip h2 a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;                 /* adjust underline distance */
+  width: 0;
+  height: 2px;
+  background-color: var(--accent, #0077cc); /* use your site blue */
+  transition: width 0.3s ease;
+}
+
+.blog-strip h2 a:hover {
+  transform: translateY(-2px);  /* optional lift effect */
+}
+
+.blog-strip h2 a:hover::after {
+  width: 100%;                  /* underline expands left → right */
+}
+
+.blog-strip .summary {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.blog-strip .date {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+    /* Blog heads */
+    .blog-item h3 { margin: 0 0 6px; font-size: 18px; }
+    .blog-item .meta { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+    /* Audiobooks */
+    .audio-item h3 { margin: 6px 0 10px; font-size: 18px; }
+    audio { width: 100%; margin-top: 8px; }
+    .audio-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;                /* consistent spacing between icon/title/audio/download */
+}
+
+.audio-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;                /* uniform spacing between icon, title, and length */
+}
+
+.audio-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.audio-length {
+  margin-left: auto;        /* push length to the far right */
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.audio-item audio {
+  width: 100%;              /* full width audio player */
+  border-radius: 8px;
+}
+
+.audio-item .btn.download {
+  align-self: flex-start;   /* keeps download button left-aligned */
+  margin-top: 4px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.audio-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;     /* centers picture + text horizontally */
+  text-align: left;
+  gap: 10px;               /* even spacing */
+}
+
+.audio-item img {
+  width: 100%;
+  height: 160px;           /* uniform picture size */
+  object-fit: cover;       /* keeps proportion while cropping */
+  border-radius: 8px;
+}
+
+.audio-item h3 {
+  margin: 6px 0 4px;
+  font-size: 1.1rem;
+}
+
+.audio-length {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.audio-item audio {
+  width: 100%;
+}
+
+.audio-item .btn.download {
+  margin-top: 6px;
+}
+/* === Full audiobooks page: make cards wider (x-axis only) === */
+
+
+/* if your audio player forces height, cap it so cards keep similar height */
+#audiobooksPage .audio-item audio {
+  min-height: 44px;
+  max-height: 56px;
+}
+    /* Video embeds */
+    .video { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; border-radius: 12px; background: #000; }
+    .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+    /* CTA banner */
+    .cta-banner { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); padding: 26px; text-align: center; box-shadow: var(--shadow); }
+    .course-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .price { font-weight: 800; font-size: 22px; }
+
+    /* Teaching style gallery */
+    .teaching { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    .teaching p { color: var(--muted); line-height: 1.7; }
+    .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Footer */
+    footer { margin-top: 40px; padding: 28px 0 60px; color: var(--muted); border-top: 1px solid rgba(255,255,255,.06); background: var(--panel-2); }
+
+    /* Router pages */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .hero-grid, .teaching { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      .course-grid { grid-template-columns: 1fr; }
+    }
+    /* ===== Audiobooks: 3-equal columns and aligned internal layout ===== */
+#audiobooksPage .cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* three equal columns */
+  gap: 24px;
+  align-items: start;                    /* prevent vertical stretch */
+  justify-items: stretch;
+}
+/* TOP block: image + title + length — same height across cards
+   (Make children stretch to the card width so image/title/timestamp
+    end at the same x position as the audio player.) */
+#audiobooksPage .card .top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;   /* <-- allow children to fill the available width */
+  min-height: 220px;      /* keeps the top blocks uniform height */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* image fixed size inside top (fills full card width) */
+#audiobooksPage .card .top img {
+  width: 100%;
+  height: 170px;          /* uniform image height */
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Title and length styling — full width and left-aligned */
+#audiobooksPage .card .top .audio-title {
+  margin: 6px 0 4px;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+#audiobooksPage .card .top .audio-length {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 4px;
+  width: 100%;
+  text-align: left;       /* left-align timestamp with title and image */
+  margin-left: 0;         /* override any earlier margin-left:auto */
+  box-sizing: border-box;
+}
+
+/* Ensure audio player lines up with the top block (same x extent) */
+#audiobooksPage .card .audio-player {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+/* Audio player area: fixed-ish height for visual alignment */
+#audiobooksPage .card .audio-player {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 44px;       /* ensures players occupy similar vertical space */
+}
+
+/* Keep audio input from stretching cards vertically */
+#audiobooksPage .audio-player audio {
+  width: 100%;
+  max-height: 56px;
+}
+
+/* Download button pinned to bottom so all buttons line up */
+#audiobooksPage .card .download-wrap {
+  margin-top: auto;       /* pushes button to the card bottom */
+  width: 100%;
+  display:flex;
+  align-items:center;
+}
+#audiobooksPage .card .download-wrap .btn {
+  margin: 0;
+  padding: 8px 12px;
+}
+
+/* Responsive: collapse to 2 cols then 1 col on small screens */
+@media (max-width: 1000px) {
+  #audiobooksPage .cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  #audiobooksPage .cards { grid-template-columns: 1fr; }
+}
+/* Audiobook cards — identical to blog/video cards */
+#audioCards .card,
+#audiobookList .card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  transition: background 0.3s ease, transform 0.2s ease, border-color 0.3s ease;
+  text-align: left;
+}
+
+/* Hover matches blog/video cards */
+#audioCards .card:hover,
+#audiobookList .card:hover {
+  background: var(--card-hover);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15); 
+  border-color: var(--card-hover);  /* same effect as blog cards */
+}
+    /* Contact form hover effect */
+#contactForm input,
+#contactForm textarea {
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+#contactForm input:hover,
+#contactForm textarea:hover {
+  background: var(--panel);   /* cream color on hover */
+  border-color: var(--accent);
+}
+.static-card {
+  background: var(--text-body);  /* same as teaching-style */
+  border: none;
+  box-shadow: none;
+  font-size:1.3rem;
+  transform: none;
+}
+
+/* Disable hover effects for static-card */
+.static-card:hover {
+  background: var(--text-body);  /* keep same color */
+  box-shadow: none;              /* remove shadow */
+  transform: none;               /* no lift */
+  border: none;                  /* ensure border stays gone */
+}
+    .hero {
+  position: relative;
+  width: 100%;
+  min-height: 500px; /* ensures the section has space */
+  overflow: hidden;
+}
+
+#heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* makes the image cover the hero area */
+  display: block;    /* ensures it renders */
+}
+
+.hero-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  text-align: center;
+  z-index: 2; /* stays above the image */
+  background-color: rgba(0, 0, 0, 0.3); /* optional: text background */
+  padding: 20px;
+  border-radius: 10px;
+}
+
+  </style>
+</head>
+<body>
+  <!-- NAV -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <!-- Brand + small book icon -->
+    <div class="brand">
+  <span class="logo" aria-hidden="true">🦉</span>
+  <a href="#/" style="font-size: 19px; color: var(--text); display: flex; gap: 10px; align-items: baseline;">
+    <span> τὸ σοφιστήριον—<span id="brandName">You</span></span>
+    <span style="font-size: 18px; font-style: italic; color: var(--muted);">
+     Sophisterion
+    </span>
+  </a>
+</div>
+
+
+    <!-- Main cluster -->
+    <div class="nav-links">
+      <!-- About (dropdown) -->
+      <div class="has-dropdown">
+        <a class="nav-link" href="#/">
+          About me <span class="arrow">▾</span>
+        </a>
+        <div class="dropdown">
+          <a href="#/teaching" class="dropdown-item">Teaching style</a>
+          <a href="#/bio" class="dropdown-item">Bio</a>
+        </div>
+      </div>
+      <!-- Contact (direct) -->
+      <a class="nav-link" href="#/contact">Contact</a>
+
+      <!-- Resources (dropdown) -->
+      <div class="has-dropdown">
+        <a class="nav-link" href="#/resources">
+          Resources <span class="arrow">▾</span>
+        </a>
+        <div class="dropdown">
+          <a href="#/guide" class="dropdown-item">My guide</a>
+          <a href="#/audiobooks" class="dropdown-item">Audiobooks</a>
+          <a href="#/blogs" class="dropdown-item">Blogs</a>
+          <a href="#/videos" class="dropdown-item">YouTube videos</a>
+        </div>
+      </div>
+      <div class="has-dropdown">
+      <a class="nav-link" href="#/store">Store<span class="arrow">▾</span></a>
+      <div class="dropdown">
+          <a href="#/handboundbooks" class="dropdown-item">Hand bound books</a>
+          <a href="#/courses" class="dropdown-item">Classes</a>
+        <!--  <a href="#/coursebundles" class="dropdown-item">Course bundles</a>-->
+        </div>
+      </div>
+      <!-- Gold CTA (nav only) -->
+      <a class="btn" href="#/courses">Sign Up</a>
+      <!-- Hegel isolated to the far right -->
+     <!-- <a class="nav-link hegel-link" href="#/hegel">Hegel</a> -->
+
+     
+    </div>
+  </div>
+</nav>
+
+  <!-- ROUTER: HOME -->
+  <main id="home" class="page active">
+    <!-- HERO / BIO -->
+   <section class="hero">
+  <div class="container hero-grid">
+    <div class="teaching-style">
+      <div class="kicker">Salvē! χαῖρε!</div>
+      <h1>Hi, I’m <span id="teacherName">Joanna Thornhill</span> — I teach Latin & Ancient Greek.</h1>
+      <p class="lead">I help students read original texts with confidence—from Catullus to Thucydides. I offer 1:1 tutoring and small-group classes online with a text-first, grammar-smart approach tailored to your goals.</p>
+      <div class="cta-row">
+        <a href="#/courses" class="btn primary">Learn with me</a>
+        <a href="#/contact" class="btn ghost">Ask a question</a>
+      </div>
+    </div>
+    <div>
+      <img id="heroImage" src="https://raw.githubusercontent.com/StormfWhite/joanna-website/main/images/Joannabooks.jpg" alt="Portrait of the teacher" />
+    </div>
+  </div>
+</section>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOG PREVIEW (headings only) -->
+    <section id="blogPreview">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>Recent Writings</h2>
+            <div class="sub">Just the headings of my latest posts</div>
+          </div>
+          <a class="btn" href="#/blogs">See all blogs</a>
+        </div>
+        <div class="cards" id="blogHeads"></div>
+      </div>
+    </section>
+
+    <!-- AUDIOBOOKS (free listening) -->
+    <section id="audiobooks">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>My Audiobooks</h2>
+            <div class="sub">Listen along to curated Latin & Greek readings</div>
+          </div>
+           <a class="btn" href="#/audiobooks">See all audiobooks</a>
+        </div>
+        <div class="cards" id="audioCards"></div>
+      </div>
+    </section>
+
+    <!-- YOUTUBE SECTION -->
+    <section id="videos">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>Recent Videos</h2>
+            <div class="sub">Three recent videos from my channel</div>
+          </div>
+          <a class="btn" id="ytLink" target="_blank" rel="noopener">Visit my YouTube</a>
+        </div>
+        <div class="cards" id="videoRow"></div>
+      </div>
+    </section>
+
+
+
+    <!-- CTA + COURSE OFFERINGS PREVIEW -->
+    <section>
+      <div class="container">
+        <div class="cta-banner">
+          <h2>Want to learn with me?</h2>
+          <p class="sub">Choose a path that fits your goals. New sessions open monthly.</p>
+          <div class="course-grid" id="coursePreview"></div>
+          <div style="margin-top: 14px">
+            <a class="btn primary" href="#/courses">See all course details</a>
+          </div>
+        </div>
+      </div>
+    </section>  
+
+ <!-- Teaching Style + Photos -->
+    <section>
+      <div class="container teaching">
+        <div class="teaching-style">
+          <h2>My Teaching Style</h2>
+          <p>I combine close reading with active language use: quick spoken prompts, short composition, and lots of sight-reading from day one. We build grammar as a tool—not an obstacle—so you can hear the author’s voice sooner. Lessons are structured, supportive, and full of feedback, whether you’re preparing for exams or reading for pleasure.</p>
+          <p>All classes include curated texts and vocab decks, optional homework, and a summary after each session. Beginners are welcome, and advanced readers get bespoke reading lists.</p>
+        </div>
+        <div class="gallery">
+          <!-- Replace the following src values with your real photos -->
+          <img src="images/teach-1.jpg" alt="Teaching photo 1" />
+          <img src="images/teach-2.jpg" alt="Teaching photo 2" />
+          <img src="images/teach-3.jpg" alt="Teaching photo 3" />
+          <img src="images/teach-4.jpg" alt="Teaching photo 4" />
+        </div>
+      </div>
+    </section>
+
+ </main>
+  <!-- ROUTER: BLOGS -->
+<main id="blogs" class="page">
+  <section style="padding: 20px 0;">
+    <div class="container">
+      <div class="section-head">
+        <h2>Blog</h2>
+        <a class="btn" href="#/">← Back to home</a>
+      </div>
+      <!-- Container where blog strips will appear -->
+      <div id="blogList"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ROUTER: AUDIOBOOKS -->
+<main id="audiobooksPage" class="page">
+  <section style="padding: 20px 0;">
+    <div class="container">
+      <div class="section-head">
+        <h2>Audiobooks</h2>
+        <a class="btn" href="#/">← Back to home</a>
+      </div>
+      <div id="audiobookList" class="cards"></div>
+    </div>
+  </section>
+</main>
+
+  <!-- ROUTER: COURSES -->
+  <main id="courses" class="page">
+    <section class="container" style="padding-top: 28px;">
+      <div class="section-head">
+        <h2>Courses & Booking</h2>
+        <a class="btn" href="#/">← Back to home</a>
+      </div>
+      <div id="courseFull" class="cards"></div>
+     <div class="card static-card" style="margin-top: 16px;">
+        <p class="sub">Click any “Book now” button to purchase via Stripe Checkout (or link to Calendly/PayPal). After checkout, you’ll receive an email with scheduling options and materials.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ROUTER: CONTACT -->
+  <main id="contact" class="page">
+    <section class="container" style="padding-top: 28px;">
+      <div class="section-head">
+        <h2>Contact</h2>
+        <a class="btn" href="#/">← Back to home</a>
+      </div>
+      <div class="card">
+        <p class="sub">Have a question about level placement, group times, or scholarships? Send a note and I’ll reply within 24 hours.</p>
+        <form id="contactForm" onsubmit="sendEmail(event)">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <input required name="name" placeholder="Name" style="padding:12px;border-radius:10px;color:var(--text);">
+            <input required type="email" name="email" placeholder="Email" style="padding:12px;border-radius:10px;color:var(--text);">
+          </div>
+          <textarea required name="message" rows="6" placeholder="How can I help?" style="width:100%;margin-top:12px;margin-bottom:10px;padding:12px;border-radius:10px;color:var(--text);"></textarea>
+          <button class="btn primary" type="submit">Send</button>
+          <span id="contactStatus" class="sub" style="margin-left:8px;"></span>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container" style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>© <span id="year"></span> <span id="footerName">[Joanna Thornhill]</span>. All rights reserved.</div>
+      <div>Built with ❤️ for the love of Latin & Greek.</div>
+    </div>
+  </footer>
+
+  <script>
+    
+    // ====== CONTENT (Edit these values) ======
+    const SITE = {
+      teacherName: "Joanna Thornhill",
+      brandName: "",
+      heroImage: "images/hero.jpg", // replace with your portrait path
+      youtubeChannelUrl: "https://www.youtube.com/@yourchannel",
+      youtubeVideoIds: ["dQw4w9WgXcQ", "ysz5S6PUM-U", "aqz-KE-bpKQ"], // replace with your 3 recent IDs
+      audiobooks: [
+  { 
+    title: "Catullus 5 – Vivamus, mea Lesbia", 
+    blurb: "A gentle reading with natural phrasing and brief glosses.",
+    src: "audio/catullus5.mp3",
+    length: "3:42",
+    image: "images/catullus.jpg"
+  },
+  { 
+    title: "Cicero In Catilinam I.1", 
+    blurb: "Deliberate tempo with rhetorical emphasis for learners.",
+    src: "audio/cicero_catilinam1.mp3",
+    length: "4:10",
+    image: "images/cicero.jpg"
+  },
+  { 
+    title: "Homer Iliad 1.1–10 (Greek)", 
+    blurb: "Measured restored pronunciation; vocabulary preview.",
+    src: "audio/iliad1.mp3",
+    length: "5:15",
+    image: "images/iliad.jpg"
+  }
+],
+      blogs: [
+        { id: 1, date: "2025-08-01", title: "Where to Start with Latin as an Adult", excerpt: "Three on-ramps that keep motivation high.", html: `<p>Starting Latin as an adult can be joyful if you choose the right lane. I recommend a text-first approach with immediate micro readings. Here are three paths: a graded reader route, an intensive grammar spiral, and a hybrid conversation track. Each can bring you to your first authentic passages within weeks...</p>` },
+        { id: 2, date: "2025-07-10", title: "Greek Accents Without Tears", excerpt: "A pattern-first way to hear the music.", html: `<p>Accents are patterns of prominence, not stress alone. If we teach them as melodies attached to syllable shapes, learners internalize rules through rhythm: <em>oxytone</em>, <em>paroxytone</em>, <em>proparoxytone</em>. I show how to map patterns to enclitics and contraction in minutes...</p>` },
+        { id: 3, date: "2025-06-12", title: "Reading Vergil by Light and Shadow", excerpt: "Techniques for savoring the Aeneid.", html: `<p>Vergil rewards slow focus. Try the light-and-shadow method: mark luminous words (light) and the tensions (shadow). Reading aloud reveals syntax arcs like hidden footpaths...</p>` },
+      ],
+      
+      courses: [
+        { sku: "latin-101", title: "Beginner Latin (4-week sprint)", price: 199, details: ["2x 60‑min live sessions / week", "Graded readings + Anki deck", "Small group (4–6)", "Session recordings"], checkout: "https://buy.stripe.com/test_XXXXlatin101" },
+        { sku: "greek-101", title: "Ancient Greek Foundations", price: 229, details: ["Weekly 90‑min seminar", "Attic core + Homeric tastes", "Sight‑reading from Week 2", "Office hours"], checkout: "https://buy.stripe.com/test_XXXXgreek101" },
+        { sku: "tutoring-1to1", title: "1:1 Tutoring (single session)", price: 80, details: ["Personalized plan", "Flexible scheduling", "Homework feedback", "Any level"], checkout: "https://calendly.com/yourname/latin-greek" }
+      ]
+    };
+
+    // ====== RENDER HELPERS ======
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    function money(n){ return new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(n); }
+
+    function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html!==undefined) e.innerHTML = html; return e; }
+
+    // BLOG PREVIEW (headings only)
+    function renderBlogHeads(){
+      const wrap = $('#blogHeads');
+      wrap.innerHTML = '';
+      SITE.blogs.slice(0,3).forEach(b => {
+        const card = el('div','card blog-item');
+        card.innerHTML = `<h3>${b.title}</h3><div class="meta">${new Date(b.date).toLocaleDateString()}</div><div class="sub">${b.excerpt}</div>`;
+        card.addEventListener('click', () => { location.hash = `#/blogs?id=${b.id}`; });
+        wrap.appendChild(card);
+      });
+    }
+
+    // AUDIOBOOKS
+    function renderAudiobooks(){
+      const wrap = $('#audioCards');
+      wrap.innerHTML = '';
+      SITE.audiobooks.forEach(a => {
+        const card = el('div','card audio-item');
+        card.innerHTML = `<h3>${a.title}</h3><div class="sub">${a.blurb}</div><audio controls preload="none"><source src="${a.src}" type="audio/mpeg">Your browser does not support the audio element.</audio>`;
+        wrap.appendChild(card);
+      });
+    }
+
+    // VIDEOS
+    function renderVideos(){
+      const row = $('#videoRow'); row.innerHTML='';
+      SITE.youtubeVideoIds.slice(0,3).forEach(id => {
+        const card = el('div','card');
+        const box = el('div','video');
+        box.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+        card.appendChild(box); row.appendChild(card);
+      });
+      const link = $('#ytLink'); link.href = SITE.youtubeChannelUrl; link.textContent = 'Go to my channel';
+    }
+
+    // COURSE PREVIEW (3 cards)
+    function renderCoursePreview(){
+      const grid = $('#coursePreview'); grid.innerHTML='';
+      SITE.courses.forEach(c => grid.appendChild(courseCard(c,true)));
+    }
+// ====== FULL AUDIOBOOK PAGE ======
+// ====== FULL AUDIOBOOK PAGE ======
+function renderFullAudiobooksPage() {
+  const container = document.getElementById('audiobookList');
+  container.innerHTML = ''; // Clear previous content
+
+  SITE.audiobooks.forEach(audio => {
+    const card = document.createElement('div');
+    card.className = 'card audio-item';
+
+    card.innerHTML = `
+      <div class="top">
+        <img src="${audio.image || 'images/default-audio.jpg'}" alt="${audio.title}">
+        <div class="info">
+          <h3 class="audio-title">${audio.title}</h3>
+          <div class="audio-length">${audio.length || ''}</div>
+        </div>
+      </div>
+
+      <div class="audio-player">
+        <audio controls preload="none">
+          <source src="${audio.src}" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+
+      <div class="download-wrap">
+        <a class="btn ghost download" href="${audio.src}" download>Download</a>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+}
+    // Full courses page
+    function renderCoursesFull(){
+      const grid = $('#courseFull'); grid.innerHTML='';
+      SITE.courses.forEach(c => grid.appendChild(courseCard(c,false)));
+    }
+
+    function courseCard(c, compact){
+      const card = el('div','card');
+      card.innerHTML = `<h3 style="margin-top:0">${c.title}</h3><div class="price">${money(c.price)}</div>`;
+      const ul = el('ul',''); ul.style.marginTop = '8px'; ul.style.paddingLeft = '18px';
+      c.details.forEach(d => { const li = el('li','', d); ul.appendChild(li); });
+      const btn = el('a','btn primary','Sign Up'); btn.href = c.checkout; btn.target = '_blank'; btn.rel = 'noopener'; btn.style.marginTop='10px';
+      card.appendChild(ul); card.appendChild(btn);
+      if(compact) card.style.paddingBottom = '12px';
+      return card;
+    }
+
+// ====== BLOG PAGE FUNCTION ======
+function renderFullBlogPage() {
+  const container = document.getElementById('blogList');
+  container.innerHTML = ''; // clear existing content
+
+  // Sort blogs chronologically: earliest first
+  const sortedBlogs = SITE.blogs.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  sortedBlogs.forEach(blog => {
+    const article = document.createElement('div');
+    article.classList.add('blog-strip');
+    article.innerHTML = `
+      <h2><a href="#/blogs?id=${blog.id}">${blog.title}</a></h2>
+      <p class="summary">${blog.excerpt}</p>
+      <span class="date">${new Date(blog.date).toLocaleDateString()}</span>
+    `;
+    container.appendChild(article);
+  });
+}
+
+function showBlogArticle(id){
+  const art = SITE.blogs.find(b => String(b.id) === String(id));
+  const article = $('#blogArticle');
+  if(!art){ article.style.display='none'; return; }
+  article.style.display = 'block';
+  article.innerHTML = `
+    <h2 style="margin-top:0">${art.title}</h2>
+    <div class="sub" style="margin-bottom:10px">${new Date(art.date).toLocaleDateString()}</div>
+    ${art.html}
+    <p style='margin-top:14px'><a class="btn" href="#/blogs">Back to list</a></p>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+
+    // CONTACT (dummy — replace with real endpoint/service like Formspree)
+    function sendEmail(e){
+      e.preventDefault();
+      const form = e.target; const data = Object.fromEntries(new FormData(form).entries());
+      document.getElementById('contactStatus').textContent = 'Thanks! I\'ll get back to you shortly.';
+      form.reset();
+      // TIP: To make this functional without a backend, connect to Formspree or Basin:
+      // 1) Create a Formspree form, get the endpoint URL
+      // 2) Replace this handler with fetch('FORM_ENDPOINT', {method:'POST', body: new FormData(form) })
+    }
+
+    // Simple hash router
+    function route(){
+      const hash = location.hash || '#/';
+      $$('.page').forEach(p => p.classList.remove('active'));
+if(hash.startsWith('#/blogs')){
+  $('#blogs').classList.add('active');
+  const qs = new URLSearchParams(hash.split('?')[1]);
+  if(qs.get('id')){
+    showBlogArticle(qs.get('id'));
+  } else {
+    renderFullBlogPage();
+  }
+}
+
+      else if(hash === '#/courses'){ $('#courses').classList.add('active'); renderCoursesFull(); }
+      else if(hash === '#/audiobooks'){
+  $('#audiobooksPage').classList.add('active');
+  renderFullAudiobooksPage();
+}
+      else if(hash === '#/contact'){ $('#contact').classList.add('active'); }
+      else { $('#home').classList.add('active'); }
+    }
+
+    // ====== INIT ======
+    function init(){
+      document.getElementById('year').textContent = new Date().getFullYear();
+      document.getElementById('brandName').textContent = SITE.brandName;
+      document.getElementById('footerName').textContent = SITE.teacherName;
+      document.getElementById('teacherName').textContent = SITE.teacherName;
+      document.getElementById('heroImage').src = SITE.heroImage;
+
+      renderBlogHeads();
+      renderAudiobooks();
+      renderVideos();
+      renderCoursePreview();
+      route();
+      window.addEventListener('hashchange', route);
+    }
+
+    init();
+  </script>
+</body>
+</html>
+<div id="treeViewContainer"></div>
