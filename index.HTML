@@ -49,18 +49,14 @@
 
   <script>
     // ---------------------------------------------------------------
-    // 1. Point this at your GitHub repo + the folder containing your
-    //    photos. The page will ask GitHub what's in that folder every
-    //    time it loads — add or remove photos on GitHub and you're
-    //    done, no code changes needed.
+    // 1. Point this at your GitHub repo + the folder containing your photos.
     // ---------------------------------------------------------------
     const GITHUB_OWNER = "StormfWhite";
     const GITHUB_REPO = "joanna-website";
-    const GITHUB_PATH = "background/images"; // folder path within the repo
+    const GITHUB_PATH = "Love"; // Folder where your photos live
     const GITHUB_BRANCH = "main";
 
-    // Fallback list used only if the GitHub API call fails (e.g. rate
-    // limited). Keep this roughly up to date as a safety net.
+    // Fallback list used only if the GitHub API call fails.
     const FALLBACK_IMAGES = [
       "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
       "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
@@ -72,12 +68,7 @@
       "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
     ];
 
-    // ---------------------------------------------------------------
-    // 2. Optional per-photo crop overrides. Most photos look fine with
-    //    the default centered crop, but every so often (like this cabin
-    //    photo, where both faces sit left of center) the default crop
-    //    needs nudging. Format: "filename": "x% y%".
-    // ---------------------------------------------------------------
+    // Optional per-photo crop overrides
     const CROP_OVERRIDES = {
       "cabin.jpg": "30% 40%"
     };
@@ -126,7 +117,7 @@
           ratio: img.naturalWidth / img.naturalHeight
         });
         img.onerror = () => resolve(null); // skip files that fail to load
-        img.src = "../background/images/" + encodeURIComponent(filename);
+        img.src = "Love/" + encodeURIComponent(filename);
       });
     }
 
@@ -134,7 +125,7 @@
       const cell = document.createElement("div");
       cell.className = "cell";
       cell.style.gridArea = areaName;
-      cell.style.backgroundImage = `url(../background/images/${encodeURIComponent(filename)})`;
+      cell.style.backgroundImage = `url(Love/${encodeURIComponent(filename)})`;
       cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
       grid.appendChild(cell);
     }
