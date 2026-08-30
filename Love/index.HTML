@@ -10,7 +10,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #faf7f2;
+    background: #ffffff;
   }
 
   .grid {
@@ -43,22 +43,34 @@
   <div class="grid" id="grid"></div>
 
   <script>
-    // Landscape-oriented photos, pre-cropped to match the wide grid cells.
-    const landscapeImages = [
-      "images/land-01.jpg","images/land-02.jpg","images/land-03.jpg","images/land-04.jpg",
-      "images/land-05.jpg","images/land-06.jpg","images/land-07.jpg","images/land-08.jpg",
-      "images/land-09.jpg","images/land-10.jpg","images/land-11.jpg","images/land-12.jpg",
-      "images/land-13.jpg","images/land-14.jpg","images/land-15.jpg","images/land-16.jpg",
-      "images/land-17.jpg","images/land-18.jpg","images/land-19.jpg","images/land-20.jpg",
-      "images/land-21.jpg"
+    // ---------------------------------------------------------------
+    // 1. List every photo in your images/ folder here, exactly as the
+    //    filename appears (spaces and capitalization included). That's
+    //    the only thing you need to edit when you add or remove photos.
+    // ---------------------------------------------------------------
+    const images = [
+      "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
+      "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
+      "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
+      "fireworks.jpg", "getty 2.jpg", "getty.jpg", "graduation dinner.jpg",
+      "island.jpg", "mission college.jpg", "rain funny.jpg", "s+J.jpg",
+      "santa fe lib.jpg", "santa fe statue.jpg", "tiny house 2.jpg",
+      "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
+      "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
     ];
 
-    // Portrait-oriented photos, pre-cropped to match the three tall grid cells.
-    const tallImages = [
-      "images/tall-01.jpg","images/tall-02.jpg","images/tall-03.jpg","images/tall-04.jpg",
-      "images/tall-05.jpg","images/tall-06.jpg","images/tall-07.jpg","images/tall-08.jpg",
-      "images/tall-09.jpg","images/tall-10.jpg"
-    ];
+    // ---------------------------------------------------------------
+    // 2. Optional per-photo crop overrides. Most photos look fine with
+    //    the default centered crop, but every so often (like this cabin
+    //    photo, where both faces sit left of center) the default crop
+    //    needs nudging. Format: "filename": "x% y%".
+    // ---------------------------------------------------------------
+    const CROP_OVERRIDES = {
+      "cabin.jpg": "30% 40%"
+    };
+
+    // A width/height ratio below this counts as a "tall" (portrait) photo.
+    const PORTRAIT_THRESHOLD = 0.95;
 
     // Slot ids exactly as named in the grid-template-areas above.
     const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
@@ -74,24 +86,41 @@
       return a;
     }
 
-    const grid = document.getElementById("grid");
-    const landPool = shuffle(landscapeImages);
-    const tallPool = shuffle(tallImages);
+    // Load an image just far enough to read its natural dimensions.
+    function probe(filename) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({
+          filename,
+          ratio: img.naturalWidth / img.naturalHeight
+        });
+        img.onerror = () => resolve(null); // skip files that fail to load
+        img.src = "images/" + encodeURIComponent(filename);
+      });
+    }
 
-    function makeCell(areaName, imgSrc) {
+    function makeCell(areaName, filename) {
       const cell = document.createElement("div");
       cell.className = "cell";
       cell.style.gridArea = areaName;
-      cell.style.backgroundImage = `url(${imgSrc})`;
+      cell.style.backgroundImage = `url(images/${encodeURIComponent(filename)})`;
+      cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
       grid.appendChild(cell);
     }
 
-    landscapeSlots.forEach((slot, i) => {
-      makeCell(slot, landPool[i % landPool.length]);
-    });
+    const grid = document.getElementById("grid");
 
-    tallSlots.forEach((slot, i) => {
-      makeCell(slot, tallPool[i % tallPool.length]);
+    Promise.all(images.map(probe)).then((results) => {
+      const valid = results.filter(Boolean);
+      const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
+      const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+
+      landscapeSlots.forEach((slot, i) => {
+        if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
+      });
+      tallSlots.forEach((slot, i) => {
+        if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
+      });
     });
   </script>
 
