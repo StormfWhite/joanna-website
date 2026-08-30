@@ -126,7 +126,7 @@
           ratio: img.naturalWidth / img.naturalHeight
         });
         img.onerror = () => resolve(null); // skip files that fail to load
-        img.src = "images/" + encodeURIComponent(filename);
+        img.src = "../background/images/" + encodeURIComponent(filename);
       });
     }
 
@@ -134,7 +134,7 @@
       const cell = document.createElement("div");
       cell.className = "cell";
       cell.style.gridArea = areaName;
-      cell.style.backgroundImage = `url(images/${encodeURIComponent(filename)})`;
+      cell.style.backgroundImage = `url(../background/images/${encodeURIComponent(filename)})`;
       cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
       grid.appendChild(cell);
     }
