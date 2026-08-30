@@ -2,21 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Random Photo Grid Background</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh; /* accounts for mobile browser chrome so nothing is cut off or leaves a gap */
     overflow: hidden;
     background: #ffffff;
   }
 
   .grid {
-    display: grid;
-    width: 100vw;
+    position: fixed;
+    inset: 0;
+    width: 100%;
     height: 100vh;
+    height: 100dvh;
+    display: grid;
     gap: 6px;
     background-color: #ffffff;
     grid-template-columns: repeat(6, 1fr);
@@ -44,11 +49,19 @@
 
   <script>
     // ---------------------------------------------------------------
-    // 1. List every photo in your images/ folder here, exactly as the
-    //    filename appears (spaces and capitalization included). That's
-    //    the only thing you need to edit when you add or remove photos.
+    // 1. Point this at your GitHub repo + the folder containing your
+    //    photos. The page will ask GitHub what's in that folder every
+    //    time it loads — add or remove photos on GitHub and you're
+    //    done, no code changes needed.
     // ---------------------------------------------------------------
-    const images = [
+    const GITHUB_OWNER = "StormfWhite";
+    const GITHUB_REPO = "joanna-website";
+    const GITHUB_PATH = "background/images"; // folder path within the repo
+    const GITHUB_BRANCH = "main";
+
+    // Fallback list used only if the GitHub API call fails (e.g. rate
+    // limited). Keep this roughly up to date as a safety net.
+    const FALLBACK_IMAGES = [
       "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
       "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
       "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
@@ -86,6 +99,24 @@
       return a;
     }
 
+    // Ask GitHub what image files currently live in the folder.
+    async function fetchImageList() {
+      const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
+        const data = await res.json();
+        const names = data
+          .filter(item => item.type === "file" && /\.(jpe?g|png|webp)$/i.test(item.name))
+          .map(item => item.name);
+        if (names.length === 0) throw new Error("No images found via API");
+        return names;
+      } catch (err) {
+        console.warn("Falling back to hardcoded image list:", err);
+        return FALLBACK_IMAGES;
+      }
+    }
+
     // Load an image just far enough to read its natural dimensions.
     function probe(filename) {
       return new Promise((resolve) => {
@@ -110,18 +141,20 @@
 
     const grid = document.getElementById("grid");
 
-    Promise.all(images.map(probe)).then((results) => {
-      const valid = results.filter(Boolean);
-      const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
-      const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+    fetchImageList()
+      .then(images => Promise.all(images.map(probe)))
+      .then((results) => {
+        const valid = results.filter(Boolean);
+        const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
+        const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
 
-      landscapeSlots.forEach((slot, i) => {
-        if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
+        landscapeSlots.forEach((slot, i) => {
+          if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
+        });
+        tallSlots.forEach((slot, i) => {
+          if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
+        });
       });
-      tallSlots.forEach((slot, i) => {
-        if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
-      });
-    });
   </script>
 
 </body>
