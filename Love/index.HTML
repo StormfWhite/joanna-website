@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Random Photo Grid Background</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #faf7f2;
+  }
+
+  .grid {
+    display: grid;
+    width: 100vw;
+    height: 100vh;
+    gap: 6px;
+    background-color: #ffffff;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-areas:
+      "p1  t1  p2  p3  p4  t3"
+      "p5  t1  p6  p7  p8  t3"
+      "p9  p10 p11 t2  p12 p13"
+      "p14 p15 p16 t2  p17 p18";
+  }
+
+  .cell {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #e9e4da; /* shows briefly while an image loads */
+  }
+</style>
+</head>
+<body>
+
+  <div class="grid" id="grid"></div>
+
+  <script>
+    // Landscape-oriented photos, pre-cropped to match the wide grid cells.
+    const landscapeImages = [
+      "images/land-01.jpg","images/land-02.jpg","images/land-03.jpg","images/land-04.jpg",
+      "images/land-05.jpg","images/land-06.jpg","images/land-07.jpg","images/land-08.jpg",
+      "images/land-09.jpg","images/land-10.jpg","images/land-11.jpg","images/land-12.jpg",
+      "images/land-13.jpg","images/land-14.jpg","images/land-15.jpg","images/land-16.jpg",
+      "images/land-17.jpg","images/land-18.jpg","images/land-19.jpg","images/land-20.jpg",
+      "images/land-21.jpg"
+    ];
+
+    // Portrait-oriented photos, pre-cropped to match the three tall grid cells.
+    const tallImages = [
+      "images/tall-01.jpg","images/tall-02.jpg","images/tall-03.jpg","images/tall-04.jpg",
+      "images/tall-05.jpg","images/tall-06.jpg","images/tall-07.jpg","images/tall-08.jpg",
+      "images/tall-09.jpg","images/tall-10.jpg"
+    ];
+
+    // Slot ids exactly as named in the grid-template-areas above.
+    const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
+                             "p11","p12","p13","p14","p15","p16","p17","p18"];
+    const tallSlots = ["t1", "t2", "t3"];
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    const grid = document.getElementById("grid");
+    const landPool = shuffle(landscapeImages);
+    const tallPool = shuffle(tallImages);
+
+    function makeCell(areaName, imgSrc) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.style.gridArea = areaName;
+      cell.style.backgroundImage = `url(${imgSrc})`;
+      grid.appendChild(cell);
+    }
+
+    landscapeSlots.forEach((slot, i) => {
+      makeCell(slot, landPool[i % landPool.length]);
+    });
+
+    tallSlots.forEach((slot, i) => {
+      makeCell(slot, tallPool[i % tallPool.length]);
+    });
+  </script>
+
+</body>
+</html>
