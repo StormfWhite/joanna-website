@@ -5,148 +5,199 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Random Photo Grid Background</title>
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh; /* accounts for mobile browser chrome so nothing is cut off or leaves a gap */
-    overflow: hidden;
-    background: #ffffff;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh; /* accounts for mobile browser chrome so nothing is cut off or leaves a gap */
+  overflow: hidden;
+  background: #ffffff;
+}
+.grid {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  gap: 6px;
+  background-color: #ffffff;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  grid-template-areas:
+    "p1 t1 p2 p3 p4 t3"
+    "p5 t1 p6 p7 p8 t3"
+    "p9 p10 p11 t2 p12 p13"
+    "p14 p15 p16 t2 p17 p18";
+}
+.cell {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #e9e4da; /* shows briefly while an image loads */
+}
 
-  .grid {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    display: grid;
-    gap: 6px;
-    background-color: #ffffff;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    grid-template-areas:
-      "p1  t1  p2  p3  p4  t3"
-      "p5  t1  p6  p7  p8  t3"
-      "p9  p10 p11 t2  p12 p13"
-      "p14 p15 p16 t2  p17 p18";
-  }
-
-  .cell {
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: #e9e4da; /* shows briefly while an image loads */
-  }
+/* --- Embedded Google Form widget, top-right corner --- */
+.form-expand-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  height: 110px;
+  z-index: 1000;
+}
+.form-crop-wrapper {
+  width: 100%;
+  height: 110px;
+  overflow: hidden !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.7;
+  border-radius: 12px;
+  background: transparent;
+  backdrop-filter: none;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+}
+/* Floats OVER lower content without pushing it */
+.form-crop-wrapper:hover,
+.form-crop-wrapper:focus-within {
+  height: 720px;
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+}
+.form-crop-wrapper iframe {
+  width: 100%;
+  height: 780px;
+  border: none;
+  background: transparent;
+}
+.form-crop-wrapper:not(:hover):not(:focus-within) iframe {
+  margin-top: -15px;
+}
 </style>
 </head>
 <body>
+<div class="grid" id="grid"></div>
 
-  <div class="grid" id="grid"></div>
+<div class="form-expand-container">
+  <div class="form-crop-wrapper">
+    <iframe
+      src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
+      width="100%"
+      frameborder="0"
+      marginheight="0"
+      marginwidth="0">
+      Loading…
+    </iframe>
+  </div>
+</div>
 
-  <script>
-    // ---------------------------------------------------------------
-    // 1. Point this at your GitHub repo + the folder containing your photos.
-    // ---------------------------------------------------------------
-    const GITHUB_OWNER = "StormfWhite";
-    const GITHUB_REPO = "joanna-website";
-    const GITHUB_PATH = "Love"; // Folder where your photos live
-    const GITHUB_BRANCH = "main";
+<script>
+// ---------------------------------------------------------------
+// 1. Point this at your GitHub repo + the folder containing your photos.
+// ---------------------------------------------------------------
+const GITHUB_OWNER = "StormfWhite";
+const GITHUB_REPO = "joanna-website";
+const GITHUB_PATH = "Love"; // Folder where your photos live
+const GITHUB_BRANCH = "main";
 
-    // Fallback list used only if the GitHub API call fails.
-    const FALLBACK_IMAGES = [
-      "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
-      "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
-      "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
-      "fireworks.jpg", "getty 2.jpg", "getty.jpg", "graduation dinner.jpg",
-      "island.jpg", "mission college.jpg", "rain funny.jpg", "s+J.jpg",
-      "santa fe lib.jpg", "santa fe statue.jpg", "tiny house 2.jpg",
-      "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
-      "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
-    ];
+// Fallback list used only if the GitHub API call fails.
+const FALLBACK_IMAGES = [
+  "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
+  "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
+  "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
+  "fireworks.jpg", "getty 2.jpg", "getty.jpg", "graduation dinner.jpg",
+  "island.jpg", "mission college.jpg", "rain funny.jpg", "s+J.jpg",
+  "santa fe lib.jpg", "santa fe statue.jpg", "tiny house 2.jpg",
+  "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
+  "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
+];
 
-    // Optional per-photo crop overrides
-    const CROP_OVERRIDES = {
-      "cabin.jpg": "30% 40%"
-    };
+// Optional per-photo crop overrides
+const CROP_OVERRIDES = {
+  "cabin.jpg": "30% 40%"
+};
 
-    // A width/height ratio below this counts as a "tall" (portrait) photo.
-    const PORTRAIT_THRESHOLD = 0.95;
+// A width/height ratio below this counts as a "tall" (portrait) photo.
+const PORTRAIT_THRESHOLD = 0.95;
 
-    // Slot ids exactly as named in the grid-template-areas above.
-    const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
-                             "p11","p12","p13","p14","p15","p16","p17","p18"];
-    const tallSlots = ["t1", "t2", "t3"];
+// Slot ids exactly as named in the grid-template-areas above.
+const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
+  "p11","p12","p13","p14","p15","p16","p17","p18"];
+const tallSlots = ["t1", "t2", "t3"];
 
-    function shuffle(arr) {
-      const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-    // Ask GitHub what image files currently live in the folder.
-    async function fetchImageList() {
-      const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
-        const data = await res.json();
-        const names = data
-          .filter(item => item.type === "file" && /\.(jpe?g|png|webp)$/i.test(item.name))
-          .map(item => item.name);
-        if (names.length === 0) throw new Error("No images found via API");
-        return names;
-      } catch (err) {
-        console.warn("Falling back to hardcoded image list:", err);
-        return FALLBACK_IMAGES;
-      }
-    }
+// Ask GitHub what image files currently live in the folder.
+async function fetchImageList() {
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
+    const data = await res.json();
+    const names = data
+      .filter(item => item.type === "file" && /\.(jpe?g|png|webp)$/i.test(item.name))
+      .map(item => item.name);
+    if (names.length === 0) throw new Error("No images found via API");
+    return names;
+  } catch (err) {
+    console.warn("Falling back to hardcoded image list:", err);
+    return FALLBACK_IMAGES;
+  }
+}
 
-    // Load an image just far enough to read its natural dimensions.
-    function probe(filename) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({
-          filename,
-          ratio: img.naturalWidth / img.naturalHeight
-        });
-        img.onerror = () => resolve(null); // skip files that fail to load
-        img.src = "Love/" + encodeURIComponent(filename);
-      });
-    }
+// Load an image just far enough to read its natural dimensions.
+function probe(filename) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({
+      filename,
+      ratio: img.naturalWidth / img.naturalHeight
+    });
+    img.onerror = () => resolve(null); // skip files that fail to load
+    img.src = "Love/" + encodeURIComponent(filename);
+  });
+}
 
-    function makeCell(areaName, filename) {
-      const cell = document.createElement("div");
-      cell.className = "cell";
-      cell.style.gridArea = areaName;
-      cell.style.backgroundImage = `url(Love/${encodeURIComponent(filename)})`;
-      cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
-      grid.appendChild(cell);
-    }
+function makeCell(areaName, filename) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+  cell.style.gridArea = areaName;
+  cell.style.backgroundImage = `url(Love/${encodeURIComponent(filename)})`;
+  cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
+  grid.appendChild(cell);
+}
 
-    const grid = document.getElementById("grid");
+const grid = document.getElementById("grid");
 
-    fetchImageList()
-      .then(images => Promise.all(images.map(probe)))
-      .then((results) => {
-        const valid = results.filter(Boolean);
-        const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
-        const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+fetchImageList()
+  .then(images => Promise.all(images.map(probe)))
+  .then((results) => {
+    const valid = results.filter(Boolean);
+    const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
+    const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
 
-        landscapeSlots.forEach((slot, i) => {
-          if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
-        });
-        tallSlots.forEach((slot, i) => {
-          if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
-        });
-      });
-  </script>
-
+    landscapeSlots.forEach((slot, i) => {
+      if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
+    });
+    tallSlots.forEach((slot, i) => {
+      if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
+    });
+  });
+</script>
 </body>
 </html>
