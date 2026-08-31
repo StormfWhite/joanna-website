@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Random Photo Grid Background</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap');
 html, body {
   margin: 0;
   padding: 0;
@@ -81,6 +82,306 @@ html, body {
 .form-crop-wrapper:not(:hover):not(:focus-within) iframe {
   margin-top: -15px;
 }
+
+/* --- Statement of Purpose button, left side --- */
+.purpose-btn-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+.purpose-btn {
+  position: relative;
+  display: inline-block;
+  --card-w: min(600px, 90vw);
+  --card-h: min(300px, 58vh);
+}
+.purpose-btn .p-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px 14px 18px;
+  border-radius: 999px;
+  background: rgba(247, 244, 239, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.25s ease;
+  position: relative;
+  z-index: 2;
+}
+.purpose-btn:hover .p-trigger,
+.purpose-btn:focus-within .p-trigger {
+  background: #f7f4ef;
+}
+.purpose-btn .p-trigger svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #2a2622;
+  stroke-width: 1.4;
+}
+.purpose-btn .p-trigger .label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2a2622;
+  white-space: nowrap;
+}
+.purpose-btn .p-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: translate(-50%, -50%) scale(0.92);
+  background: #f7f4ef;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1001;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 40px;
+  overflow-y: auto;
+}
+.purpose-btn:hover .p-reveal,
+.purpose-btn:focus-within .p-reveal {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.purpose-btn .p-reveal .p-content p {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: #2a2622;
+  text-align: center;
+}
+
+/* --- Directions for Arriving button, left side, below Statement of Purpose --- */
+.directions-btn-container {
+  position: fixed;
+  top: 90px;
+  left: 20px;
+  z-index: 1000;
+}
+.directions-btn {
+  position: relative;
+  display: inline-block;
+  --card-w: min(520px, 90vw);
+  --card-h: min(600px, 88vh);
+}
+.directions-btn .d-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.directions-btn .d-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px 14px 18px;
+  border-radius: 999px;
+  background: rgba(247, 244, 239, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.25s ease;
+  position: relative;
+  z-index: 2;
+}
+.directions-btn .d-toggle:checked ~ .d-trigger,
+.directions-btn:hover .d-trigger {
+  background: #f7f4ef;
+}
+.directions-btn .d-trigger svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #2a2622;
+  stroke-width: 1.4;
+}
+.directions-btn .d-trigger .label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2a2622;
+  white-space: nowrap;
+}
+.directions-btn .d-quick-link {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  margin-top: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(247, 244, 239, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #6b4c3a;
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.directions-btn:hover .d-quick-link {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.directions-btn .d-quick-link:hover {
+  background: #f7f4ef;
+}
+.directions-btn .d-quick-link-bridge {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  height: 20px;
+  z-index: 1;
+}
+.directions-btn .d-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: translate(-50%, -50%) scale(0.92);
+  background: #f7f4ef;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1011;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  overflow-y: auto;
+}
+.directions-btn .d-toggle:checked ~ .d-reveal,
+.directions-btn:hover .d-reveal {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.directions-btn .d-reveal .d-content p {
+  margin: 0 0 14px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 19px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  color: #2a2622;
+  text-align: left;
+}
+.directions-btn .d-reveal .d-content ol,
+.directions-btn .d-reveal .d-content ul {
+  margin: 0;
+  padding-left: 22px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #2a2622;
+  text-align: left;
+}
+.directions-btn .d-reveal .d-content li {
+  margin-bottom: 10px;
+}
+.directions-btn .d-reveal .d-content ul {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #55504a;
+}
+.directions-btn .d-map-panel {
+  position: fixed;
+  top: calc(50% - (var(--card-h) / 2));
+  left: calc(50% + (var(--card-w) / 2) + 44px);
+  width: min(280px, 32vw);
+  height: min(220px, 32vh);
+  background: #f7f4ef;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1011;
+  transform: scale(0.92);
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  display: flex;
+  flex-direction: column;
+}
+.directions-btn .d-toggle:checked ~ .d-map-panel,
+.directions-btn:hover .d-map-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+.directions-btn .d-map-panel iframe {
+  width: 100%;
+  flex: 1;
+  border: 0;
+  display: block;
+}
+.directions-btn .d-hover-bridge {
+  position: fixed;
+  top: calc(50% - (var(--card-h) / 2));
+  left: calc(50% + (var(--card-w) / 2));
+  width: 44px;
+  height: var(--card-h);
+  z-index: 1011;
+  pointer-events: none;
+}
+.directions-btn:hover .d-hover-bridge {
+  pointer-events: auto;
+}
+@media (max-width: 760px) {
+  .directions-btn .d-map-panel {
+    top: auto;
+    bottom: calc(50% - (var(--card-h) / 2) - 240px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.92);
+    width: min(340px, 88vw);
+    height: 200px;
+  }
+  .directions-btn .d-toggle:checked ~ .d-map-panel,
+  .directions-btn:hover .d-map-panel {
+    transform: translateX(-50%) scale(1);
+  }
+  .directions-btn .d-hover-bridge {
+    display: none;
+  }
+}
 </style>
 </head>
 <body>
@@ -99,28 +400,92 @@ html, body {
   </div>
 </div>
 
+<div class="purpose-btn-container">
+  <div class="purpose-btn">
+    <div class="p-trigger" tabindex="0">
+      <svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8 12h8M8 16h5"/></svg>
+      <span class="label">Statement of Purpose</span>
+    </div>
+    <div class="p-reveal">
+      <div class="p-content">
+        <p>We are all caught in an inescapable net of mutuality with one another. As Joanna and I join in marital union August 7th, our obligation grows not only toward each other, but also toward our closest friends and family. We hope that our marriage fosters an ongoing and stable commitment to each other, such that we may be known as a unity whom you all may depend on for anything life may throw your way, small or large. We are all stronger together than alone.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="directions-btn-container">
+  <div class="directions-btn">
+    <input type="checkbox" id="directions-toggle" class="d-toggle">
+    <label for="directions-toggle" class="d-trigger">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span class="label">Directions for Arriving</span>
+    </label>
+    <div class="d-quick-link-bridge"></div>
+    <a class="d-quick-link"
+       href="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15"
+       target="_blank" rel="noopener noreferrer">
+      Open in Google Maps ↗
+    </a>
+    <div class="d-reveal">
+      <div class="d-content">
+        <p>When you arrive at 15227 Berlin Turnpike, Purcellville, VA, 20132, you will see a fence and a road curving right.</p>
+        <ol>
+          <li>Turn left through the gate.
+            <ul>
+              <li>Remember to hit the button to open the gate! Sometimes it takes a few tries. It can also be slow to react, so be patient and gentle with it. (You must press the button to open the gate from both sides, when you enter and when you leave!)</li>
+            </ul>
+          </li>
+          <li>From there you can follow the dirt road that eventually turns to gravel until you see a roundabout and a green barn on your left, and a parking area on your right.</li>
+          <li>Find a parking spot somewhere on your right.</li>
+          <li>Then, you should be able to find me around the green barn.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="d-hover-bridge"></div>
+    <div class="d-map-panel">
+      <iframe
+        src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
+        loading="lazy"
+        title="directions map"></iframe>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---------------------------------------------------------------
-// 1. Point this at your GitHub repo + the folder containing your photos.
+// 1. Point this at your GitHub repo + the folders containing your photos.
+//    Photos.html itself lives inside /Love/, so paths are relative to that.
 // ---------------------------------------------------------------
 const GITHUB_OWNER = "StormfWhite";
 const GITHUB_REPO = "joanna-website";
-const GITHUB_PATH = ""; // Photos now live at repo root
 const GITHUB_BRANCH = "main";
 
-// Fallback list used only if the GitHub API call fails.
+// Two photo sets: default (this same /Love/ folder, where Photos.html lives)
+// and "Farm" (the /Love/Farm subfolder), shown when hovering the RSVP widget.
+const PHOTO_SETS = {
+  default: { apiPath: "Love",      relPrefix: "" },
+  farm:    { apiPath: "Love/Farm", relPrefix: "Farm/" }
+};
+
+// Fallback list used only if the GitHub API call fails, for the default set.
+// Kept in sync with the actual contents of /Love/.
 const FALLBACK_IMAGES = [
-  "Bonsai.jpg", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
-  "SF hike.jpg", "SF top 3.jpg", "SF top 4.jpg", "Soy.jpg",
+  "Bonsai.jpg", "IMG_4306.GIF", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
+  "SF hike.jpg", "SF top 4.jpg", "Soy.jpg",
   "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
   "fireworks.jpg", "getty 2.jpg", "getty.jpg", "graduation dinner.jpg",
-  "island.jpg", "mission college.jpg", "rain funny.jpg", "s+J.jpg",
+  "island.JPG", "mission college.JPEG", "rain funny.jpg", "s+J.jpg",
   "santa fe lib.jpg", "santa fe statue.jpg", "tiny house 2.jpg",
   "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
   "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
 ];
 
-// Optional per-photo crop overrides
+// No hardcoded fallback for Farm — if the API call fails, that set is
+// simply empty and the grid stays on whatever was showing before.
+const FARM_FALLBACK_IMAGES = [];
+
+// Optional per-photo crop overrides (filename -> background-position)
 const CROP_OVERRIDES = {
   "cabin.jpg": "30% 40%"
 };
@@ -142,26 +507,29 @@ function shuffle(arr) {
   return a;
 }
 
-// Ask GitHub what image files currently live in the folder.
-async function fetchImageList() {
-  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`.replace(/contents\/\?/, "contents?");
+// Ask GitHub what image files currently live in the given folder.
+async function fetchImageList(apiPath, fallback) {
+  const base = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
+  const url = apiPath
+    ? `${base}/${apiPath}?ref=${GITHUB_BRANCH}`
+    : `${base}?ref=${GITHUB_BRANCH}`;
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
     const data = await res.json();
     const names = data
-      .filter(item => item.type === "file" && /\.(jpe?g|png|webp)$/i.test(item.name))
+      .filter(item => item.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(item.name))
       .map(item => item.name);
     if (names.length === 0) throw new Error("No images found via API");
     return names;
   } catch (err) {
-    console.warn("Falling back to hardcoded image list:", err);
-    return FALLBACK_IMAGES;
+    console.warn(`Falling back to hardcoded image list for "${apiPath}":`, err);
+    return fallback;
   }
 }
 
 // Load an image just far enough to read its natural dimensions.
-function probe(filename) {
+function probe(filename, relPrefix) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => resolve({
@@ -169,35 +537,79 @@ function probe(filename) {
       ratio: img.naturalWidth / img.naturalHeight
     });
     img.onerror = () => resolve(null); // skip files that fail to load
-    img.src = "../" + encodeURIComponent(filename);
+    img.src = relPrefix + encodeURIComponent(filename);
   });
 }
 
-function makeCell(areaName, filename) {
+function makeCell(areaName, filename, relPrefix) {
   const cell = document.createElement("div");
   cell.className = "cell";
   cell.style.gridArea = areaName;
-  cell.style.backgroundImage = `url(../${encodeURIComponent(filename)})`;
+  cell.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
   cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
-  grid.appendChild(cell);
+  return cell;
+}
+
+function renderGrid(valid, relPrefix) {
+  const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
+  const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+
+  const fragment = document.createDocumentFragment();
+  landscapeSlots.forEach((slot, i) => {
+    if (landscapePool.length > 0) fragment.appendChild(makeCell(slot, landscapePool[i % landscapePool.length], relPrefix));
+  });
+  tallSlots.forEach((slot, i) => {
+    if (tallPool.length > 0) fragment.appendChild(makeCell(slot, tallPool[i % tallPool.length], relPrefix));
+  });
+
+  grid.replaceChildren(fragment);
 }
 
 const grid = document.getElementById("grid");
 
-fetchImageList()
-  .then(images => Promise.all(images.map(probe)))
-  .then((results) => {
-    const valid = results.filter(Boolean);
-    const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
-    const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+// Cache each set's probed results so we don't re-fetch/re-probe every hover.
+const setCache = {};
 
-    landscapeSlots.forEach((slot, i) => {
-      if (landscapePool.length > 0) makeCell(slot, landscapePool[i % landscapePool.length]);
-    });
-    tallSlots.forEach((slot, i) => {
-      if (tallPool.length > 0) makeCell(slot, tallPool[i % tallPool.length]);
-    });
+async function loadSet(setKey, fallback) {
+  if (setCache[setKey]) return setCache[setKey];
+  const { apiPath, relPrefix } = PHOTO_SETS[setKey];
+  const images = await fetchImageList(apiPath, fallback);
+  const results = await Promise.all(images.map(f => probe(f, relPrefix)));
+  const valid = results.filter(Boolean);
+  setCache[setKey] = valid;
+  return valid;
+}
+
+// Initial render: default photo set.
+loadSet("default", FALLBACK_IMAGES).then((valid) => {
+  renderGrid(valid, PHOTO_SETS.default.relPrefix);
+});
+
+// Hover the RSVP widget -> swap to Farm photos. Leave -> revert to default.
+const rsvpWidget = document.querySelector(".form-crop-wrapper");
+if (rsvpWidget) {
+  let hoverToken = 0;
+
+  rsvpWidget.addEventListener("mouseenter", async () => {
+    const token = ++hoverToken;
+    const valid = await loadSet("farm", FARM_FALLBACK_IMAGES);
+    if (token !== hoverToken) return; // a newer hover/unhover happened, discard stale result
+    if (valid.length > 0) {
+      renderGrid(valid, PHOTO_SETS.farm.relPrefix);
+    }
   });
+
+  rsvpWidget.addEventListener("mouseleave", async () => {
+    const token = ++hoverToken;
+    const valid = await loadSet("default", FALLBACK_IMAGES);
+    if (token !== hoverToken) return;
+    renderGrid(valid, PHOTO_SETS.default.relPrefix);
+  });
+
+  // Also handle keyboard focus (matches the :focus-within expansion behavior).
+  rsvpWidget.addEventListener("focusin", () => rsvpWidget.dispatchEvent(new Event("mouseenter")));
+  rsvpWidget.addEventListener("focusout", () => rsvpWidget.dispatchEvent(new Event("mouseleave")));
+}
 </script>
 </body>
 </html>
