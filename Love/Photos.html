@@ -105,7 +105,7 @@ html, body {
 // ---------------------------------------------------------------
 const GITHUB_OWNER = "StormfWhite";
 const GITHUB_REPO = "joanna-website";
-const GITHUB_PATH = "Love"; // Folder where your photos live
+const GITHUB_PATH = ""; // Photos now live at repo root
 const GITHUB_BRANCH = "main";
 
 // Fallback list used only if the GitHub API call fails.
@@ -144,7 +144,7 @@ function shuffle(arr) {
 
 // Ask GitHub what image files currently live in the folder.
 async function fetchImageList() {
-  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`;
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_PATH}?ref=${GITHUB_BRANCH}`.replace(/contents\/\?/, "contents?");
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
@@ -169,7 +169,7 @@ function probe(filename) {
       ratio: img.naturalWidth / img.naturalHeight
     });
     img.onerror = () => resolve(null); // skip files that fail to load
-    img.src = "Love/" + encodeURIComponent(filename);
+    img.src = "../" + encodeURIComponent(filename);
   });
 }
 
@@ -177,7 +177,7 @@ function makeCell(areaName, filename) {
   const cell = document.createElement("div");
   cell.className = "cell";
   cell.style.gridArea = areaName;
-  cell.style.backgroundImage = `url(Love/${encodeURIComponent(filename)})`;
+  cell.style.backgroundImage = `url(../${encodeURIComponent(filename)})`;
   cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
   grid.appendChild(cell);
 }
