@@ -13,6 +13,9 @@ html, body {
   height: 100vh;
   height: 100dvh; /* accounts for mobile browser chrome so nothing is cut off or leaves a gap */
   overflow: hidden;
+  overscroll-behavior: none; /* stops mobile "rubber-band" bounce scroll from leaking to the page */
+  position: fixed; /* belt-and-suspenders: pins the page in place even if something inside grows taller than the viewport */
+  inset: 0;
   background: #ffffff;
 }
 .grid {
@@ -24,6 +27,8 @@ html, body {
   display: grid;
   gap: 6px;
   background-color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.5s ease;
   grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(4, 1fr);
   grid-template-areas:
@@ -81,6 +86,54 @@ html, body {
 }
 .form-crop-wrapper:not(:hover):not(:focus-within) iframe {
   margin-top: -15px;
+}
+
+/* --- "Already RSVP'd" compact state: overrides the hover-expand
+       behavior above so the widget stays small even on hover --- */
+.form-crop-wrapper.responded,
+.form-crop-wrapper.responded:hover,
+.form-crop-wrapper.responded:focus-within {
+  height: 70px !important;
+  opacity: 1;
+  background: rgba(247, 244, 239, 0.9);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.form-crop-wrapper.responded iframe {
+  display: none;
+}
+.form-crop-wrapper .rsvp-thanks {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 4px;
+  padding: 8px 16px;
+}
+.form-crop-wrapper.responded .rsvp-thanks {
+  display: flex;
+}
+.form-crop-wrapper .rsvp-thanks p {
+  margin: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: #2a2622;
+}
+.form-crop-wrapper .rsvp-thanks a {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: #6b4c3a;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* --- Statement of Purpose button, left side --- */
@@ -153,6 +206,7 @@ html, body {
   justify-content: center;
   padding: 26px 40px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .purpose-btn:hover .p-reveal,
 .purpose-btn:focus-within .p-reveal {
@@ -288,6 +342,7 @@ html, body {
   justify-content: center;
   padding: 36px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .directions-btn .d-toggle:checked ~ .d-reveal,
 .directions-btn:hover .d-reveal {
@@ -387,9 +442,10 @@ html, body {
 <body>
 <div class="grid" id="grid"></div>
 
-<div class="form-expand-container">
-  <div class="form-crop-wrapper">
+<div class="form-expand-container" id="rsvpContainer">
+  <div class="form-crop-wrapper" id="rsvpWrapper">
     <iframe
+      id="rsvpIframe"
       src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
       width="100%"
       frameborder="0"
@@ -397,6 +453,10 @@ html, body {
       marginwidth="0">
       Loading…
     </iframe>
+    <div class="rsvp-thanks" id="rsvpThanks">
+      <p>Thanks for RSVPing!</p>
+      <a href="#" id="rsvpEditLink">Edit your response</a>
+    </div>
   </div>
 </div>
 
@@ -550,7 +610,7 @@ function makeCell(areaName, filename, relPrefix) {
   return cell;
 }
 
-function renderGrid(valid, relPrefix) {
+function setGridCells(valid, relPrefix) {
   const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
   const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
 
@@ -563,6 +623,34 @@ function renderGrid(valid, relPrefix) {
   });
 
   grid.replaceChildren(fragment);
+}
+
+// Matches the .grid { transition: opacity ... } duration in the CSS above —
+// keep these in sync if you change one.
+const GRID_FADE_MS = 500;
+
+function renderGrid(valid, relPrefix) {
+  const isInitialRender = grid.childElementCount === 0;
+
+  if (isInitialRender) {
+    // Nothing on screen yet (grid starts at opacity: 0 in CSS) — just
+    // populate it, then fade the whole thing in rather than popping in.
+    setGridCells(valid, relPrefix);
+    void grid.offsetWidth; // force a reflow so the browser registers opacity:0 first
+    requestAnimationFrame(() => {
+      grid.style.opacity = "1";
+    });
+    return;
+  }
+
+  // Already showing photos (switching Love <-> Farm) — fade out, swap the
+  // images underneath while invisible, then fade back in.
+  grid.style.opacity = "0";
+  setTimeout(() => {
+    setGridCells(valid, relPrefix);
+    void grid.offsetWidth;
+    grid.style.opacity = "1";
+  }, GRID_FADE_MS);
 }
 
 const grid = document.getElementById("grid");
@@ -586,11 +674,13 @@ loadSet("default", FALLBACK_IMAGES).then((valid) => {
 });
 
 // Hover the RSVP widget -> swap to Farm photos. Leave -> revert to default.
+// (Disabled once the widget is in the compact "responded" state.)
 const rsvpWidget = document.querySelector(".form-crop-wrapper");
 if (rsvpWidget) {
   let hoverToken = 0;
 
   rsvpWidget.addEventListener("mouseenter", async () => {
+    if (rsvpWidget.classList.contains("responded")) return;
     const token = ++hoverToken;
     const valid = await loadSet("farm", FARM_FALLBACK_IMAGES);
     if (token !== hoverToken) return; // a newer hover/unhover happened, discard stale result
@@ -600,6 +690,7 @@ if (rsvpWidget) {
   });
 
   rsvpWidget.addEventListener("mouseleave", async () => {
+    if (rsvpWidget.classList.contains("responded")) return;
     const token = ++hoverToken;
     const valid = await loadSet("default", FALLBACK_IMAGES);
     if (token !== hoverToken) return;
@@ -610,6 +701,63 @@ if (rsvpWidget) {
   rsvpWidget.addEventListener("focusin", () => rsvpWidget.dispatchEvent(new Event("mouseenter")));
   rsvpWidget.addEventListener("focusout", () => rsvpWidget.dispatchEvent(new Event("mouseleave")));
 }
+
+// ---------------------------------------------------------------
+// RSVP submission detection.
+//
+// We can't read the Google Form iframe's contents (it's a different
+// origin), so we can't literally check for a "Thanks for responding"
+// message inside it. Instead we use a well-known heuristic: the
+// iframe fires a "load" event once for the initial blank form, and
+// fires a SECOND "load" event when it internally navigates to the
+// confirmation page after a submit — even cross-origin, the load
+// event itself still fires, we just can't see what loaded.
+//
+// Once we see that second load, we treat it as "submitted", remember
+// it in localStorage so returning visitors skip straight to the
+// compact "already responded" state, and swap the UI.
+// ---------------------------------------------------------------
+(function initRsvpSubmissionTracking() {
+  const STORAGE_KEY = "rsvpSubmitted";
+  const wrapper = document.getElementById("rsvpWrapper");
+  const iframe = document.getElementById("rsvpIframe");
+  const editLink = document.getElementById("rsvpEditLink");
+  if (!wrapper || !iframe) return;
+
+  function showResponded() {
+    wrapper.classList.add("responded");
+  }
+
+  function showForm() {
+    wrapper.classList.remove("responded");
+  }
+
+  if (localStorage.getItem(STORAGE_KEY) === "true") {
+    showResponded();
+  } else {
+    let loadCount = 0;
+    iframe.addEventListener("load", () => {
+      loadCount++;
+      if (loadCount > 1) {
+        localStorage.setItem(STORAGE_KEY, "true");
+        showResponded();
+      }
+    });
+  }
+
+  // "Edit your response" — we don't have access to a real per-response
+  // edit URL (that's only available inside the confirmation page we
+  // can't read), so this clears the remembered state and reloads the
+  // form fresh, letting them submit an updated response.
+  if (editLink) {
+    editLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem(STORAGE_KEY);
+      showForm();
+      iframe.src = iframe.src; // reload to a clean form
+    });
+  }
+})();
 </script>
 </body>
 </html>
