@@ -46,18 +46,30 @@ html, body {
   background-color: #e9e4da; /* shows briefly while an image loads */
 }
 
-/* --- Embedded Google Form widget, top-right corner --- */
+/* --- Embedded Google Form widget, top-right corner ---
+   These heights control how much of the (cross-origin) Google Form is
+   visible in each state. Since it's a different origin, we can't see
+   its actual rendered layout — --rsvp-form-expanded-h is a best guess
+   at "down to the Next/Submit button". If it cuts the button off, or
+   leaves blank space below it, bump this one number up or down and
+   nothing else needs to change. */
+:root {
+  --rsvp-form-collapsed-h: 110px;   /* collapsed: shows just the RSVP title */
+  --rsvp-form-expanded-h: 480px;    /* hover, before responding: down to ~Next/Submit — tune this */
+  --rsvp-thanks-collapsed-h: 60px;  /* collapsed, after responding: "Thanks for RSVPing!" only */
+  --rsvp-thanks-expanded-h: 112px;  /* hover, after responding: reveals the Edit link too, no further */
+}
 .form-expand-container {
   position: fixed;
   top: 80px;
   right: 20px;
   width: 320px;
-  height: 110px;
+  height: var(--rsvp-form-collapsed-h);
   z-index: 1000;
 }
 .form-crop-wrapper {
   width: 100%;
-  height: 110px;
+  height: var(--rsvp-form-collapsed-h);
   overflow: hidden !important;
   position: absolute;
   top: 0;
@@ -71,7 +83,7 @@ html, body {
 /* Floats OVER lower content without pushing it */
 .form-crop-wrapper:hover,
 .form-crop-wrapper:focus-within {
-  height: 720px;
+  height: var(--rsvp-form-expanded-h);
   opacity: 1;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
@@ -88,36 +100,38 @@ html, body {
   margin-top: -15px;
 }
 
-/* --- "Already RSVP'd" compact state: overrides the hover-expand
-       behavior above so the widget stays small even on hover --- */
-.form-crop-wrapper.responded,
-.form-crop-wrapper.responded:hover,
-.form-crop-wrapper.responded:focus-within {
-  height: 70px !important;
+/* --- "Already RSVP'd" state: a real crop-reveal, same idea as the form
+       above. Collapsed shows only the "Thanks for RSVPing!" line; hover
+       grows the box just enough to reveal the Edit link below it, and
+       stops — no further expansion. --- */
+.form-crop-wrapper.responded {
+  height: var(--rsvp-thanks-collapsed-h) !important;
   opacity: 1;
   background: rgba(247, 244, 239, 0.9);
   backdrop-filter: blur(6px);
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(0, 0, 0, 0.08);
   z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+}
+.form-crop-wrapper.responded:hover,
+.form-crop-wrapper.responded:focus-within {
+  height: var(--rsvp-thanks-expanded-h) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
 }
 .form-crop-wrapper.responded iframe {
   display: none;
 }
 .form-crop-wrapper .rsvp-thanks {
   display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 4px;
-  padding: 8px 16px;
 }
 .form-crop-wrapper.responded .rsvp-thanks {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 16px 16px 14px;
 }
 .form-crop-wrapper .rsvp-thanks p {
   margin: 0;
@@ -222,6 +236,205 @@ html, body {
   letter-spacing: 0.01em;
   color: #2a2622;
   text-align: center;
+}
+
+/* --- The Invitation button, left side, hover reveals invitation.jpg --- */
+.invitation-btn-container {
+  position: fixed;
+  top: 220px;
+  left: 20px;
+  z-index: 1000;
+}
+.invitation-btn {
+  position: relative;
+  display: inline-block;
+  --card-w: min(520px, 90vw);
+  --card-h: min(680px, 88vh);
+}
+.invitation-btn .i-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px 14px 18px;
+  border-radius: 999px;
+  background: rgba(247, 244, 239, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.25s ease;
+  position: relative;
+  z-index: 2;
+}
+.invitation-btn:hover .i-trigger,
+.invitation-btn:focus-within .i-trigger {
+  background: #f7f4ef;
+}
+.invitation-btn .i-trigger svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #2a2622;
+  stroke-width: 1.4;
+}
+.invitation-btn .i-trigger .label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2a2622;
+  white-space: nowrap;
+}
+.invitation-btn .i-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: translate(-50%, -50%) scale(0.92);
+  background: #f7f4ef;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1011;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+.invitation-btn:hover .i-reveal,
+.invitation-btn:focus-within .i-reveal {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.invitation-btn .i-reveal img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+.invitation-btn .i-reveal .i-fallback {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #6b4c3a;
+  text-align: center;
+  display: none;
+}
+.invitation-btn .i-reveal img.i-broken {
+  display: none;
+}
+.invitation-btn .i-reveal img.i-broken ~ .i-fallback {
+  display: block;
+}
+
+/* --- Before You Arrive button, left side --- */
+.before-btn-container {
+  position: fixed;
+  top: 290px;
+  left: 20px;
+  z-index: 1000;
+}
+.before-btn {
+  position: relative;
+  display: inline-block;
+  --card-w: min(560px, 90vw);
+  --card-h: min(420px, 70vh);
+}
+.before-btn .b-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px 14px 18px;
+  border-radius: 999px;
+  background: rgba(247, 244, 239, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: background 0.25s ease;
+  position: relative;
+  z-index: 2;
+}
+.before-btn:hover .b-trigger,
+.before-btn:focus-within .b-trigger {
+  background: #f7f4ef;
+}
+.before-btn .b-trigger svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #2a2622;
+  stroke-width: 1.4;
+}
+.before-btn .b-trigger .label {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #2a2622;
+  white-space: nowrap;
+}
+.before-btn .b-reveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform: translate(-50%, -50%) scale(0.92);
+  background: #f7f4ef;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1011;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 40px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.before-btn:hover .b-reveal,
+.before-btn:focus-within .b-reveal {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.before-btn .b-reveal .b-content p {
+  margin: 0 0 12px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: #2a2622;
+  text-align: left;
+}
+.before-btn .b-reveal .b-content ul {
+  margin: 0;
+  padding-left: 20px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #2a2622;
+  text-align: left;
+}
+.before-btn .b-reveal .b-content li {
+  margin-bottom: 8px;
 }
 
 /* --- Directions for Arriving button, left side, below Statement of Purpose --- */
@@ -508,6 +721,41 @@ html, body {
         src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
         loading="lazy"
         title="directions map"></iframe>
+    </div>
+  </div>
+</div>
+
+<div class="invitation-btn-container">
+  <div class="invitation-btn">
+    <div class="i-trigger" tabindex="0">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg>
+      <span class="label">The Invitation</span>
+    </div>
+    <div class="i-reveal">
+      <img
+        src="../invitation.jpg"
+        alt="Wedding invitation"
+        onerror="this.classList.add('i-broken')">
+      <p class="i-fallback">Invitation coming soon.</p>
+    </div>
+  </div>
+</div>
+
+<div class="before-btn-container">
+  <div class="before-btn">
+    <div class="b-trigger" tabindex="0">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span class="label">Before You Arrive</span>
+    </div>
+    <div class="b-reveal">
+      <div class="b-content">
+        <p>A few things to know before the big day:</p>
+        <ul>
+          <li>Placeholder — let us know what you'd like listed here.</li>
+          <li>Placeholder — e.g. attire, weather, what to bring.</li>
+          <li>Placeholder — e.g. parking or arrival timing notes.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
