@@ -44,6 +44,8 @@ html, body {
   background-position: center;
   background-repeat: no-repeat;
   background-color: #e9e4da; /* shows briefly while an image loads */
+  opacity: 1;
+  transition: opacity 0.26s ease; /* keep in sync with CELL_FADE_MS in the script below */
 }
 
 /* --- Embedded Google Form widget, top-right corner ---
@@ -150,42 +152,56 @@ html, body {
   cursor: pointer;
 }
 
-/* --- Statement of Purpose button, left side --- */
-.purpose-btn-container {
+/* --- Shared wrapper for the four left-side tabs (Statement of Purpose,
+       Directions, The Invitation, Before You Arrive) — stacked flush
+       against the left edge, vertically centered as a group. --- */
+.side-tabs {
   position: fixed;
-  top: 80px;
-  left: 20px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   z-index: 1000;
 }
+
+/* --- Statement of Purpose, side tab --- */
 .purpose-btn {
   position: relative;
-  display: inline-block;
+  display: block;
   --card-w: min(600px, 90vw);
   --card-h: min(300px, 58vh);
 }
 .purpose-btn .p-trigger {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px 14px 18px;
-  border-radius: 999px;
+  gap: 10px;
+  width: auto;
+  height: auto;
+  padding: 14px 22px 14px 16px;
+  border-radius: 0 999px 999px 0;
   background: rgba(247, 244, 239, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  border-left: none;
+  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
-  transition: background 0.25s ease;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   z-index: 2;
 }
 .purpose-btn:hover .p-trigger,
 .purpose-btn:focus-within .p-trigger {
   background: #f7f4ef;
+  transform: translateX(4px);
+  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .purpose-btn .p-trigger svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   fill: none;
   stroke: #2a2622;
@@ -194,7 +210,7 @@ html, body {
 .purpose-btn .p-trigger .label {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #2a2622;
@@ -238,42 +254,42 @@ html, body {
   text-align: center;
 }
 
-/* --- The Invitation button, left side, hover reveals invitation.jpg --- */
-.invitation-btn-container {
-  position: fixed;
-  top: 220px;
-  left: 20px;
-  z-index: 1000;
-}
+/* --- The Invitation, side tab, hover reveals invitation.jpg --- */
 .invitation-btn {
   position: relative;
-  display: inline-block;
+  display: block;
   --card-w: min(520px, 90vw);
   --card-h: min(680px, 88vh);
 }
 .invitation-btn .i-trigger {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px 14px 18px;
-  border-radius: 999px;
+  gap: 10px;
+  width: auto;
+  height: auto;
+  padding: 14px 22px 14px 16px;
+  border-radius: 0 999px 999px 0;
   background: rgba(247, 244, 239, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  border-left: none;
+  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
-  transition: background 0.25s ease;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   z-index: 2;
 }
 .invitation-btn:hover .i-trigger,
 .invitation-btn:focus-within .i-trigger {
   background: #f7f4ef;
+  transform: translateX(4px);
+  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .invitation-btn .i-trigger svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   fill: none;
   stroke: #2a2622;
@@ -282,7 +298,7 @@ html, body {
 .invitation-btn .i-trigger .label {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #2a2622;
@@ -338,41 +354,42 @@ html, body {
 }
 
 /* --- Before You Arrive button, left side --- */
-.before-btn-container {
-  position: fixed;
-  top: 290px;
-  left: 20px;
-  z-index: 1000;
-}
+/* --- Before You Arrive, side tab --- */
 .before-btn {
   position: relative;
-  display: inline-block;
+  display: block;
   --card-w: min(560px, 90vw);
   --card-h: min(420px, 70vh);
 }
 .before-btn .b-trigger {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px 14px 18px;
-  border-radius: 999px;
+  gap: 10px;
+  width: auto;
+  height: auto;
+  padding: 14px 22px 14px 16px;
+  border-radius: 0 999px 999px 0;
   background: rgba(247, 244, 239, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  border-left: none;
+  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
-  transition: background 0.25s ease;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   z-index: 2;
 }
 .before-btn:hover .b-trigger,
 .before-btn:focus-within .b-trigger {
   background: #f7f4ef;
+  transform: translateX(4px);
+  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .before-btn .b-trigger svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   fill: none;
   stroke: #2a2622;
@@ -381,7 +398,7 @@ html, body {
 .before-btn .b-trigger .label {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #2a2622;
@@ -437,16 +454,10 @@ html, body {
   margin-bottom: 8px;
 }
 
-/* --- Directions for Arriving button, left side, below Statement of Purpose --- */
-.directions-btn-container {
-  position: fixed;
-  top: 150px;
-  left: 20px;
-  z-index: 1000;
-}
+/* --- Directions for Arriving, side tab --- */
 .directions-btn {
   position: relative;
-  display: inline-block;
+  display: block;
   --card-w: min(520px, 90vw);
   --card-h: min(600px, 88vh);
 }
@@ -458,28 +469,34 @@ html, body {
   pointer-events: none;
 }
 .directions-btn .d-trigger {
-  display: inline-flex;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  padding: 14px 24px 14px 18px;
-  border-radius: 999px;
+  gap: 10px;
+  width: auto;
+  height: auto;
+  padding: 14px 22px 14px 16px;
+  border-radius: 0 999px 999px 0;
   background: rgba(247, 244, 239, 0.85);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+  border-left: none;
+  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   cursor: pointer;
-  transition: background 0.25s ease;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   position: relative;
   z-index: 2;
 }
 .directions-btn .d-toggle:checked ~ .d-trigger,
 .directions-btn:hover .d-trigger {
   background: #f7f4ef;
+  transform: translateX(4px);
+  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .directions-btn .d-trigger svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   fill: none;
   stroke: #2a2622;
@@ -488,7 +505,7 @@ html, body {
 .directions-btn .d-trigger .label {
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #2a2622;
@@ -673,7 +690,7 @@ html, body {
   </div>
 </div>
 
-<div class="purpose-btn-container">
+<div class="side-tabs">
   <div class="purpose-btn">
     <div class="p-trigger" tabindex="0">
       <svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8 12h8M8 16h5"/></svg>
@@ -685,9 +702,7 @@ html, body {
       </div>
     </div>
   </div>
-</div>
 
-<div class="directions-btn-container">
   <div class="directions-btn">
     <input type="checkbox" id="directions-toggle" class="d-toggle">
     <label for="directions-toggle" class="d-trigger">
@@ -723,9 +738,7 @@ html, body {
         title="directions map"></iframe>
     </div>
   </div>
-</div>
 
-<div class="invitation-btn-container">
   <div class="invitation-btn">
     <div class="i-trigger" tabindex="0">
       <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg>
@@ -739,9 +752,7 @@ html, body {
       <p class="i-fallback">Invitation coming soon.</p>
     </div>
   </div>
-</div>
 
-<div class="before-btn-container">
   <div class="before-btn">
     <div class="b-trigger" tabindex="0">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
@@ -849,41 +860,61 @@ function probe(filename, relPrefix) {
   });
 }
 
-function makeCell(areaName, filename, relPrefix) {
-  const cell = document.createElement("div");
-  cell.className = "cell";
-  cell.style.gridArea = areaName;
-  cell.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
-  cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
-  return cell;
+function setCellImage(cell, filename, relPrefix) {
+  if (filename) {
+    cell.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
+    cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
+  } else {
+    cell.style.backgroundImage = "none";
+  }
 }
 
-function setGridCells(valid, relPrefix) {
+function computeAssignment(valid) {
   const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
   const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
 
-  const fragment = document.createDocumentFragment();
+  const assignment = {};
   landscapeSlots.forEach((slot, i) => {
-    if (landscapePool.length > 0) fragment.appendChild(makeCell(slot, landscapePool[i % landscapePool.length], relPrefix));
+    if (landscapePool.length > 0) assignment[slot] = landscapePool[i % landscapePool.length];
   });
   tallSlots.forEach((slot, i) => {
-    if (tallPool.length > 0) fragment.appendChild(makeCell(slot, tallPool[i % tallPool.length], relPrefix));
+    if (tallPool.length > 0) assignment[slot] = tallPool[i % tallPool.length];
   });
-
-  grid.replaceChildren(fragment);
+  return assignment;
 }
 
-// Matches the .grid { transition: opacity ... } duration in the CSS above —
-// keep these in sync if you change one.
-const GRID_FADE_MS = 500;
+const grid = document.getElementById("grid");
+
+// One persistent cell per slot, created once. Swapping photo sets later
+// reuses these same elements (just updates their background-image) instead
+// of tearing down and rebuilding the grid, so each tile can animate on
+// its own.
+const ALL_SLOTS = [...landscapeSlots, ...tallSlots];
+const cellMap = {};
+ALL_SLOTS.forEach((area) => {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+  cell.style.gridArea = area;
+  grid.appendChild(cell);
+  cellMap[area] = cell;
+});
+
+// Matches the .cell { transition: opacity ... } duration in the CSS above.
+const CELL_FADE_MS = 260;
+// Extra delay added per tile so they swap one-by-one in a ripple rather
+// than all at once. Total ripple length ≈ ALL_SLOTS.length * this value.
+const CELL_STAGGER_MS = 40;
+
+let firstRenderDone = false;
 
 function renderGrid(valid, relPrefix) {
-  const isInitialRender = grid.childElementCount === 0;
+  const assignment = computeAssignment(valid);
 
-  if (isInitialRender) {
+  if (!firstRenderDone) {
     // Nothing on screen yet (grid starts at opacity: 0 in CSS) — just
-    // populate it, then fade the whole thing in rather than popping in.
-    setGridCells(valid, relPrefix);
+    // populate every tile directly, then fade the whole grid in together.
+    ALL_SLOTS.forEach((area) => setCellImage(cellMap[area], assignment[area], relPrefix));
+    firstRenderDone = true;
     void grid.offsetWidth; // force a reflow so the browser registers opacity:0 first
     requestAnimationFrame(() => {
       grid.style.opacity = "1";
@@ -891,17 +922,20 @@ function renderGrid(valid, relPrefix) {
     return;
   }
 
-  // Already showing photos (switching Love <-> Farm) — fade out, swap the
-  // images underneath while invisible, then fade back in.
-  grid.style.opacity = "0";
-  setTimeout(() => {
-    setGridCells(valid, relPrefix);
-    void grid.offsetWidth;
-    grid.style.opacity = "1";
-  }, GRID_FADE_MS);
+  // Subsequent swap (Love <-> Farm) — replace tiles one at a time in a
+  // shuffled ripple: each tile fades out, swaps its photo, fades back in.
+  const rippleOrder = shuffle(ALL_SLOTS);
+  rippleOrder.forEach((area, i) => {
+    const cell = cellMap[area];
+    setTimeout(() => {
+      cell.style.opacity = "0";
+      setTimeout(() => {
+        setCellImage(cell, assignment[area], relPrefix);
+        cell.style.opacity = "1";
+      }, CELL_FADE_MS);
+    }, i * CELL_STAGGER_MS);
+  });
 }
-
-const grid = document.getElementById("grid");
 
 // Cache each set's probed results so we don't re-fetch/re-probe every hover.
 const setCache = {};
@@ -921,34 +955,46 @@ loadSet("default", FALLBACK_IMAGES).then((valid) => {
   renderGrid(valid, PHOTO_SETS.default.relPrefix);
 });
 
-// Hover the RSVP widget -> swap to Farm photos. Leave -> revert to default.
-// (Disabled once the widget is in the compact "responded" state.)
-const rsvpWidget = document.querySelector(".form-crop-wrapper");
-if (rsvpWidget) {
-  let hoverToken = 0;
+// Hovering certain elements swaps the background to Farm photos; leaving
+// reverts to the default set. Shared across every element this is wired to,
+// so quickly moving the mouse between them doesn't cause flicker/races.
+let farmHoverToken = 0;
 
-  rsvpWidget.addEventListener("mouseenter", async () => {
-    if (rsvpWidget.classList.contains("responded")) return;
-    const token = ++hoverToken;
+function enableFarmHoverSwap(el, { isBlocked } = {}) {
+  if (!el) return;
+
+  el.addEventListener("mouseenter", async () => {
+    if (isBlocked && isBlocked()) return;
+    const token = ++farmHoverToken;
     const valid = await loadSet("farm", FARM_FALLBACK_IMAGES);
-    if (token !== hoverToken) return; // a newer hover/unhover happened, discard stale result
+    if (token !== farmHoverToken) return; // a newer hover/unhover happened, discard stale result
     if (valid.length > 0) {
       renderGrid(valid, PHOTO_SETS.farm.relPrefix);
     }
   });
 
-  rsvpWidget.addEventListener("mouseleave", async () => {
-    if (rsvpWidget.classList.contains("responded")) return;
-    const token = ++hoverToken;
+  el.addEventListener("mouseleave", async () => {
+    if (isBlocked && isBlocked()) return;
+    const token = ++farmHoverToken;
     const valid = await loadSet("default", FALLBACK_IMAGES);
-    if (token !== hoverToken) return;
+    if (token !== farmHoverToken) return;
     renderGrid(valid, PHOTO_SETS.default.relPrefix);
   });
 
   // Also handle keyboard focus (matches the :focus-within expansion behavior).
-  rsvpWidget.addEventListener("focusin", () => rsvpWidget.dispatchEvent(new Event("mouseenter")));
-  rsvpWidget.addEventListener("focusout", () => rsvpWidget.dispatchEvent(new Event("mouseleave")));
+  el.addEventListener("focusin", () => el.dispatchEvent(new Event("mouseenter")));
+  el.addEventListener("focusout", () => el.dispatchEvent(new Event("mouseleave")));
 }
+
+// RSVP widget: disabled once it's in the compact "already responded" state.
+const rsvpWidget = document.querySelector(".form-crop-wrapper");
+enableFarmHoverSwap(rsvpWidget, {
+  isBlocked: () => rsvpWidget.classList.contains("responded")
+});
+
+// The Invitation button: always enabled.
+const invitationBtn = document.querySelector(".invitation-btn");
+enableFarmHoverSwap(invitationBtn);
 
 // ---------------------------------------------------------------
 // RSVP submission detection.
