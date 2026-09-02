@@ -38,14 +38,23 @@ html, body {
     "p14 p15 p16 t2 p17 p18";
 }
 .cell {
+  position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  background-color: #e9e4da; /* shows briefly only before any photo has ever loaded */
+}
+.cell-layer {
+  position: absolute;
+  inset: 0;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #e9e4da; /* shows briefly while an image loads */
+  opacity: 0;
+  transition: opacity 0.35s ease; /* keep in sync with CELL_FADE_MS in the script below */
+}
+.cell-layer.active {
   opacity: 1;
-  transition: opacity 0.26s ease; /* keep in sync with CELL_FADE_MS in the script below */
 }
 
 /* --- Embedded Google Form widget, top-right corner ---
@@ -128,12 +137,30 @@ html, body {
   display: none;
 }
 .form-crop-wrapper.responded .rsvp-thanks {
+  display: block;
+  width: 100%;
+}
+/* Exactly fills the collapsed height, so "Thanks for RSVPing!" is
+   precisely vertically centered in the resting state. */
+.form-crop-wrapper .rsvp-thanks .rsvp-title-row {
+  height: var(--rsvp-thanks-collapsed-h);
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  gap: 8px;
-  padding: 16px 16px 14px;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+/* Takes up exactly the remaining space between collapsed and expanded
+   height — so hover reveals precisely down to this row and no further. */
+.form-crop-wrapper .rsvp-thanks .rsvp-edit-row {
+  height: calc(var(--rsvp-thanks-expanded-h) - var(--rsvp-thanks-collapsed-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 .form-crop-wrapper .rsvp-thanks p {
   margin: 0;
@@ -157,11 +184,12 @@ html, body {
        against the left edge, vertically centered as a group. --- */
 .side-tabs {
   position: fixed;
-  top: 50%;
+  top: 0;
+  bottom: 0;
   left: 0;
-  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 4px;
   z-index: 1000;
 }
@@ -684,8 +712,12 @@ html, body {
       Loading…
     </iframe>
     <div class="rsvp-thanks" id="rsvpThanks">
-      <p>Thanks for RSVPing!</p>
-      <a href="#" id="rsvpEditLink">Edit your response</a>
+      <div class="rsvp-title-row">
+        <p>Thanks for RSVPing!</p>
+      </div>
+      <div class="rsvp-edit-row">
+        <a href="#" id="rsvpEditLink">Edit your response</a>
+      </div>
     </div>
   </div>
 </div>
@@ -860,12 +892,12 @@ function probe(filename, relPrefix) {
   });
 }
 
-function setCellImage(cell, filename, relPrefix) {
+function setLayerImage(layer, filename, relPrefix) {
   if (filename) {
-    cell.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
-    cell.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
+    layer.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
+    layer.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
   } else {
-    cell.style.backgroundImage = "none";
+    layer.style.backgroundImage = "none";
   }
 }
 
@@ -885,22 +917,30 @@ function computeAssignment(valid) {
 
 const grid = document.getElementById("grid");
 
-// One persistent cell per slot, created once. Swapping photo sets later
-// reuses these same elements (just updates their background-image) instead
-// of tearing down and rebuilding the grid, so each tile can animate on
-// its own.
+// One persistent cell per slot, created once, each holding TWO stacked
+// image layers. Swapping sets loads the new photo into whichever layer is
+// currently hidden, then fades that layer in on top of the other — so the
+// old photo stays visible underneath the whole time and there's never a
+// blank/placeholder-color gap mid-swap, just a direct crossfade.
 const ALL_SLOTS = [...landscapeSlots, ...tallSlots];
 const cellMap = {};
 ALL_SLOTS.forEach((area) => {
   const cell = document.createElement("div");
   cell.className = "cell";
   cell.style.gridArea = area;
+
+  const layerA = document.createElement("div");
+  layerA.className = "cell-layer active";
+  const layerB = document.createElement("div");
+  layerB.className = "cell-layer";
+
+  cell.appendChild(layerA);
+  cell.appendChild(layerB);
   grid.appendChild(cell);
-  cellMap[area] = cell;
+
+  cellMap[area] = { layers: [layerA, layerB], activeIndex: 0 };
 });
 
-// Matches the .cell { transition: opacity ... } duration in the CSS above.
-const CELL_FADE_MS = 260;
 // Extra delay added per tile so they swap one-by-one in a ripple rather
 // than all at once. Total ripple length ≈ ALL_SLOTS.length * this value.
 const CELL_STAGGER_MS = 40;
@@ -912,8 +952,12 @@ function renderGrid(valid, relPrefix) {
 
   if (!firstRenderDone) {
     // Nothing on screen yet (grid starts at opacity: 0 in CSS) — just
-    // populate every tile directly, then fade the whole grid in together.
-    ALL_SLOTS.forEach((area) => setCellImage(cellMap[area], assignment[area], relPrefix));
+    // populate every tile's active layer directly, then fade the whole
+    // grid in together.
+    ALL_SLOTS.forEach((area) => {
+      const { layers, activeIndex } = cellMap[area];
+      setLayerImage(layers[activeIndex], assignment[area], relPrefix);
+    });
     firstRenderDone = true;
     void grid.offsetWidth; // force a reflow so the browser registers opacity:0 first
     requestAnimationFrame(() => {
@@ -922,17 +966,20 @@ function renderGrid(valid, relPrefix) {
     return;
   }
 
-  // Subsequent swap (Love <-> Farm) — replace tiles one at a time in a
-  // shuffled ripple: each tile fades out, swaps its photo, fades back in.
+  // Subsequent swap (Love <-> Farm) — crossfade tiles one at a time in a
+  // shuffled ripple: load the new photo into the hidden layer, then fade
+  // it in over the still-visible old one.
   const rippleOrder = shuffle(ALL_SLOTS);
   rippleOrder.forEach((area, i) => {
-    const cell = cellMap[area];
+    const state = cellMap[area];
     setTimeout(() => {
-      cell.style.opacity = "0";
-      setTimeout(() => {
-        setCellImage(cell, assignment[area], relPrefix);
-        cell.style.opacity = "1";
-      }, CELL_FADE_MS);
+      const nextIndex = state.activeIndex === 0 ? 1 : 0;
+      const nextLayer = state.layers[nextIndex];
+      setLayerImage(nextLayer, assignment[area], relPrefix);
+      void nextLayer.offsetWidth; // force reflow so the image is painted before we fade it in
+      state.layers[state.activeIndex].classList.remove("active");
+      nextLayer.classList.add("active");
+      state.activeIndex = nextIndex;
     }, i * CELL_STAGGER_MS);
   });
 }
