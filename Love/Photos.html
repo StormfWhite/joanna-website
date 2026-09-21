@@ -37,6 +37,21 @@ html, body {
     "p9 p10 p11 t2 p12 p13"
     "p14 p15 p16 t2 p17 p18";
 }
+/* On narrow screens, 6 columns makes every photo a tall sliver — reflow
+   to 3 columns instead. The JS only assigns background images by grid-area
+   name; it doesn't care how those areas are visually arranged, so this is
+   purely a layout change. Cells get their grid-area set inline by JS, so
+   `!important` is needed here to actually override that per-cell value. */
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    grid-template-areas: none;
+  }
+  .cell {
+    grid-area: unset !important;
+  }
+}
 .cell {
   position: relative;
   width: 100%;
@@ -58,15 +73,16 @@ html, body {
 }
 
 /* --- Embedded Google Form widget, top-right corner ---
-   Hover-based crop-reveal: collapsed shows just the top of the real
-   Google Form (or "Thanks for RSVPing!" if already responded);
-   hovering expands to reveal the rest. It's a different origin, so
-   we can't see its actual rendered layout — --rsvp-form-expanded-h
-   is deliberately generous (comfortably taller than the form) rather
-   than trying to crop precisely to a button inside it. */
+   Hover-based crop-reveal: collapsed shows the "RSVP" label (or
+   "Thanks for RSVPing!" if already responded); hovering expands just
+   enough to fit a typical multi-question form. It's a different
+   origin, so we can't see its actual rendered height — if your form
+   is taller/shorter than this, --rsvp-form-expanded-h is the one
+   number to adjust; the card scrolls internally if content runs
+   past it, so it won't ever cut a field off, just may need a scroll. */
 :root {
   --rsvp-form-collapsed-h: 110px;   /* collapsed: shows just the RSVP title */
-  --rsvp-form-expanded-h: 650px;    /* hover, before responding: generously tall */
+  --rsvp-form-expanded-h: min(420px, 78vh); /* hover, before responding: compact, capped so it can't exceed a short screen */
   --rsvp-thanks-collapsed-h: 60px;  /* collapsed, after responding: "Thanks for RSVPing!" only */
   --rsvp-thanks-expanded-h: 112px;  /* hover, after responding: reveals the Edit link too, no further */
 }
@@ -74,7 +90,7 @@ html, body {
   position: fixed;
   top: 80px;
   right: 20px;
-  width: 320px;
+  width: min(320px, calc(100vw - 40px));
   height: var(--rsvp-form-collapsed-h);
   z-index: 1000;
 }
@@ -100,6 +116,9 @@ html, body {
   backdrop-filter: blur(10px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   z-index: 999;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
 }
 .form-crop-wrapper iframe {
   width: 100%;
@@ -109,6 +128,38 @@ html, body {
 }
 .form-crop-wrapper:not(:hover):not(:focus-within) iframe {
   margin-top: -15px;
+}
+
+/* Explicit "RSVP" text label covering the collapsed state, instead of
+   relying on a cropped peek of the real form. Fades away on hover to
+   reveal the actual form underneath. */
+.form-crop-wrapper .rsvp-pill-label {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  background: rgba(247, 244, 239, 0.9);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2a2622;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+.form-crop-wrapper:hover .rsvp-pill-label,
+.form-crop-wrapper:focus-within .rsvp-pill-label {
+  opacity: 0;
+  pointer-events: none;
+}
+.form-crop-wrapper.responded .rsvp-pill-label {
+  display: none;
 }
 
 /* --- "Already RSVP'd" state: a real crop-reveal, same idea as the form
@@ -192,6 +243,9 @@ html, body {
   justify-content: center;
   gap: 4px;
   z-index: 1000;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* --- Statement of Purpose, side tab --- */
@@ -224,7 +278,6 @@ html, body {
 .purpose-btn:hover .p-trigger,
 .purpose-btn:focus-within .p-trigger {
   background: #f7f4ef;
-  transform: translateX(4px);
   box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .purpose-btn .p-trigger svg {
@@ -312,7 +365,6 @@ html, body {
 .invitation-btn:hover .i-trigger,
 .invitation-btn:focus-within .i-trigger {
   background: #f7f4ef;
-  transform: translateX(4px);
   box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .invitation-btn .i-trigger svg {
@@ -411,7 +463,6 @@ html, body {
 .before-btn:hover .b-trigger,
 .before-btn:focus-within .b-trigger {
   background: #f7f4ef;
-  transform: translateX(4px);
   box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .before-btn .b-trigger svg {
@@ -518,7 +569,6 @@ html, body {
 .directions-btn .d-toggle:checked ~ .d-trigger,
 .directions-btn:hover .d-trigger {
   background: #f7f4ef;
-  transform: translateX(4px);
   box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
 }
 .directions-btn .d-trigger svg {
@@ -665,6 +715,23 @@ html, body {
   border: 0;
   display: block;
 }
+/* Covers Google's own "view larger map" link baked into the embed's
+   top-left corner — that's cross-origin content we can't edit, only
+   visually mask. pointer-events:auto so clicks land on the patch
+   (does nothing) instead of passing through to the hidden link.
+   .d-map-panel is already position:fixed, which is itself a valid
+   positioning context for this absolutely-positioned patch. */
+.directions-btn .d-map-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 110px;
+  height: 26px;
+  background: #f7f4ef;
+  z-index: 2;
+  pointer-events: auto;
+}
 .directions-btn .d-hover-bridge {
   position: fixed;
   top: calc(50% - (var(--card-h) / 2));
@@ -701,6 +768,7 @@ html, body {
 
 <div class="form-expand-container" id="rsvpContainer">
   <div class="form-crop-wrapper" id="rsvpWrapper">
+    <div class="rsvp-pill-label">RSVP</div>
     <iframe
       id="rsvpIframe"
       src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
@@ -760,6 +828,8 @@ html, body {
           <li>The wedding will take place on August 7th on a farm in Virginia. The address is 15227 Berlin Turnpike, Purcellville, VA 20132.</li>
           <li>You are welcome to bring a plus one — friend or lover — but they must RSVP also!</li>
           <li>For those with more adventurous personalities (or just fewer funds), you are welcome to camp on the property! We expect to be able to find tents for everyone who wants/needs one, but bringing your own would also be welcome.</li>
+          <li>We won't be doing a registry — instead, we invite people to donate their time/bodies as they wish to help with various wedding prep.</li>
+          <li>Anyone can come as early as they want to set up camp/hangout and help. We will probably arrive ourselves about a week before.</li>
         </ul>
       </div>
     </div>
