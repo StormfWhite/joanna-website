@@ -15,6 +15,9 @@
   --safe-l: 20px;
   /* Hover / open color for pills. Lighter = softer. */
   --pill-active: #7d6d61;
+  /* Phones: how far down from the top of the screen the tabs start,
+     to clear the Squarespace header. Raise or lower this one number. */
+  --phone-top-offset: 84px;
 }
 
 /* ---------- Page + photo grid ---------- */
@@ -462,7 +465,7 @@ html.room-for-map .map-panel { display: block; }
 
   /* Tabs sit in a 2×2 block at the top, clear of the notch/status bar. */
   .side-tabs {
-    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
+    top: max(var(--phone-top-offset), calc(env(safe-area-inset-top, 0px) + 8px));
     right: 0;
     bottom: auto;
     display: grid;
