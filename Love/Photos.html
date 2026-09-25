@@ -296,6 +296,22 @@ body.tab-open .scrim { opacity: 1; }
   padding: 36px 40px;
   -webkit-overflow-scrolling: touch;
 }
+/* Soft fade at the bottom of a card when there's more to scroll,
+   so it's clear the text continues rather than looking cut off. */
+.tab-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  border-radius: 0 0 10px 10px;
+  background: linear-gradient(rgba(247, 244, 239, 0), #f7f4ef 85%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.tab-card.more::after { opacity: 1; }
 .tab-close {
   position: absolute;
   top: 8px;
@@ -673,6 +689,17 @@ const Tabs = (function () {
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
   return { closeAll };
 })();
+
+// Show the bottom fade on cards whose text continues below the fold
+document.querySelectorAll(".tab-body").forEach((body) => {
+  const card = body.closest(".tab-card");
+  const update = () => card.classList.toggle("more", body.scrollHeight - body.scrollTop - body.clientHeight > 4);
+  body.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+  card.closest(".tab").querySelector(".tab-trigger").addEventListener("click", () => requestAnimationFrame(update));
+  if ("ResizeObserver" in window) new ResizeObserver(update).observe(body);
+  update();
+});
 
 // ===============================================================
 // RSVP
