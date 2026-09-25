@@ -13,6 +13,8 @@
   --safe-r: 20px;
   --safe-b: 20px;
   --safe-l: 20px;
+  /* Hover / open color for pills. Lighter = softer. */
+  --pill-active: #7d6d61;
 }
 
 /* ---------- Page + photo grid ---------- */
@@ -115,12 +117,12 @@ body.tab-open .scrim { opacity: 1; }
   outline-offset: -3px;
 }
 .tab.open .pill {
-  background: #2a2622;
+  background: var(--pill-active);
   color: #f7f4ef;
 }
 @media (hover: hover) and (pointer: fine) {
   .pill:hover {
-    background: #2a2622;
+    background: var(--pill-active);
     color: #f7f4ef;
   }
 }
@@ -156,7 +158,7 @@ body.tab-open .scrim { opacity: 1; }
 }
 .rsvp-head .label { flex-shrink: 0; }
 .rsvp.expanded .rsvp-head {
-  background: #2a2622;
+  background: var(--pill-active);
   color: #f7f4ef;
 }
 .rsvp .t-thanks { display: none; }
@@ -189,6 +191,8 @@ body.tab-open .scrim { opacity: 1; }
   font-family: 'Cormorant Garamond', Georgia, serif;
   color: #2a2622;
 }
+.rsvp-ask .fit,
+.rsvp-thanks .fit { display: inline-block; white-space: nowrap; }
 .rsvp-ask p { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
 .rsvp-ask .row { display: flex; gap: 8px; justify-content: center; }
 .rsvp-ask button {
@@ -203,7 +207,7 @@ body.tab-open .scrim { opacity: 1; }
   transition: background 0.2s ease, color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
-.rsvp-ask button.yes { background: #2a2622; color: #f7f4ef; }
+.rsvp-ask button.yes { background: var(--pill-active); color: #f7f4ef; }
 .rsvp-thanks a,
 .rsvp-open-full {
   font-style: italic;
@@ -249,7 +253,6 @@ body.tab-open .scrim { opacity: 1; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 44px;
   pointer-events: none;
   z-index: 1011;
 }
@@ -375,7 +378,7 @@ html.room-for-map .maps-inline { display: none; }
   pointer-events: none;
   transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
-.d-quick-link:hover { background: #2a2622; color: #f7f4ef; }
+.d-quick-link:hover { background: var(--pill-active); color: #f7f4ef; }
 .d-quick-link-bridge {
   position: absolute;
   top: 100%;
@@ -385,19 +388,16 @@ html.room-for-map .maps-inline { display: none; }
 }
 .map-panel {
   display: none;
-  position: relative;
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 44px);
+  transform: translateY(-50%);
   width: 280px;
   height: 220px;
   background: #f7f4ef;
   border-radius: 10px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
   overflow: hidden;
-  transform: scale(0.94);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, visibility 0s linear 0.3s;
 }
 html.room-for-map .map-panel { display: block; }
 .map-panel iframe { width: 100%; height: 100%; border: 0; display: block; }
@@ -419,25 +419,11 @@ html.room-for-map .map-panel { display: block; }
   right: 100%;
   width: 46px;
 }
-.tab-directions.open .map-panel {
-  transform: scale(1);
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transition-delay: 0s;
-}
 @media (hover: hover) and (pointer: fine) {
   .tab-directions:hover .d-quick-link {
     opacity: 1;
     pointer-events: auto;
     transform: translateX(-50%) translateY(0);
-  }
-  .side-tabs:not(:has(.tab.open)) .tab-directions:hover .map-panel {
-    transform: scale(1);
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transition-delay: 0s;
   }
 }
 
@@ -509,14 +495,16 @@ html.room-for-map .map-panel { display: block; }
         title="RSVP form">Loading…</iframe>
     </div>
     <div class="rsvp-ask" id="rsvpAsk">
-      <p>Did your RSVP go through?</p>
-      <div class="row">
-        <button type="button" class="yes" id="rsvpYes">Yes</button>
-        <button type="button" id="rsvpNo">Not yet</button>
+      <div class="fit">
+        <p>Did your RSVP go through?</p>
+        <div class="row">
+          <button type="button" class="yes" id="rsvpYes">Yes</button>
+          <button type="button" id="rsvpNo">Not yet</button>
+        </div>
       </div>
     </div>
     <div class="rsvp-thanks" id="rsvpThanks">
-      <a href="#" id="rsvpChange">Change my response</a>
+      <div class="fit"><a href="#" id="rsvpChange">Change my response</a></div>
     </div>
   </div>
 </div>
@@ -603,12 +591,12 @@ html.room-for-map .map-panel { display: block; }
              href="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15"
              target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a>
         </div>
-      </div>
-      <div class="map-panel">
-        <iframe
-          src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
-          loading="lazy"
-          title="directions map"></iframe>
+        <div class="map-panel">
+          <iframe
+            src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
+            loading="lazy"
+            title="directions map"></iframe>
+        </div>
       </div>
     </div>
   </div>
@@ -691,15 +679,20 @@ const Rsvp = (function () {
   function sizeOpen() {
     const L = Layout.limits();
     const closedW = parseFloat(box.style.getPropertyValue("--rsvp-w-closed")) || 0;
-    const openW = Math.max(closedW, Math.min(FORM_MAX_WIDTH, L.maxWidth));
-    box.style.setProperty("--rsvp-w-open", Math.floor(openW) + "px");
-    let h;
+    let openW, h;
     if (state() === "form") {
+      openW = Math.min(FORM_MAX_WIDTH, L.maxWidth);
       h = Math.min(FORM_MAX_HEIGHT, L.bottom - head.getBoundingClientRect().bottom);
     } else {
+      // Only as wide and tall as what it's actually showing.
       const body = state() === "ask" ? document.getElementById("rsvpAsk") : document.getElementById("rsvpThanks");
+      const cs = getComputedStyle(body);
+      const contentW = body.querySelector(".fit").offsetWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      openW = Math.min(contentW, L.maxWidth);
       h = body.scrollHeight;
     }
+    openW = Math.max(closedW, openW);
+    box.style.setProperty("--rsvp-w-open", Math.floor(openW) + "px");
     box.style.setProperty("--rsvp-panel-h", Math.max(0, Math.floor(h)) + "px");
   }
   function resize() { sizeClosed(); sizeOpen(); }
@@ -820,7 +813,6 @@ const Layout = (function () {
   const rsvpHead = document.getElementById("rsvpHead");
   const sideTabs = document.getElementById("sideTabs");
   const triggers = Array.from(document.querySelectorAll(".tab-trigger"));
-  const MAP_NEEDS = 520 + 44 + 280;
   const isPhone = () => window.innerWidth <= 700;
   let cache = { maxWidth: 640, bottom: window.innerHeight - 20 };
 
@@ -830,24 +822,28 @@ const Layout = (function () {
     const pad = isPhone() ? 10 : 20;
     const headBottom = rsvpHead.getBoundingClientRect().bottom;
 
-    let left, bottom;
+    // Cards stay centered on the screen: whatever space we keep clear on
+    // one side, we keep clear on the opposite side too.
+    let side, vert, bottom, rsvpLeftLimit;
     if (isPhone()) {
-      left = pad;
-      bottom = sideTabs.getBoundingClientRect().top - pad; // above the bottom bar
+      const barTop = sideTabs.getBoundingClientRect().top;
+      bottom = barTop - pad;                       // RSVP stops above the bottom bar
+      side = pad;
+      vert = Math.max(headBottom + pad, vh - barTop + pad);
+      rsvpLeftLimit = 8;
     } else {
       const tabsRight = Math.max(...triggers.map(t => t.getBoundingClientRect().right));
-      left = (vw - tabsRight - pad * 2 >= 420) ? tabsRight + pad : pad;
       bottom = vh - pad;
+      side = (vw - 2 * (tabsRight + pad) >= 420) ? tabsRight + pad : pad;
+      vert = headBottom + pad;
+      rsvpLeftLimit = tabsRight + pad;
     }
-    root.style.setProperty("--safe-t", Math.round(headBottom + pad) + "px");
-    root.style.setProperty("--safe-r", pad + "px");
-    root.style.setProperty("--safe-b", Math.round(vh - bottom) + "px");
-    root.style.setProperty("--safe-l", Math.round(left) + "px");
-    root.classList.toggle("room-for-map", !isPhone() && vw - left - pad >= MAP_NEEDS);
+    root.style.setProperty("--safe-t", Math.round(vert) + "px");
+    root.style.setProperty("--safe-b", Math.round(vert) + "px");
+    root.style.setProperty("--safe-l", Math.round(side) + "px");
+    root.style.setProperty("--safe-r", Math.round(side) + "px");
+    root.classList.toggle("room-for-map", !isPhone() && vw / 2 + 260 + 44 + 280 + pad <= vw);
 
-    // RSVP form may grow leftward up to the side tabs (desktop) or
-    // nearly edge to edge (phone), and down to `bottom`.
-    const rsvpLeftLimit = isPhone() ? 8 : left;
     cache = { maxWidth: vw - rsvpLeftLimit, bottom };
   }
   function limits() { return cache; }
