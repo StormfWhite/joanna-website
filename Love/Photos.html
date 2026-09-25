@@ -101,8 +101,16 @@ body.tab-open .scrim { opacity: 1; }
   appearance: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  /* Pressing on the words shouldn't start text selection or the
+     iPhone copy/lookup popup — that swallows the tap. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
   transition: background 0.25s ease, color 0.25s ease, padding 0.25s ease;
 }
+/* Icons and words inside a pill never catch the tap themselves, so a
+   finger anywhere on the pill always lands on the pill. */
+.pill > * { pointer-events: none; }
 .pill svg {
   width: 20px;
   height: 20px;
@@ -467,6 +475,7 @@ html.room-for-map .map-panel { display: block; }
   .tab.open .tab-trigger {
     width: 100%;
     min-width: 0;
+    min-height: 48px;          /* comfortable finger-sized target */
     justify-content: center;
     border-radius: 999px;
     padding: 12px 10px;
@@ -484,7 +493,7 @@ html.room-for-map .map-panel { display: block; }
   }
 
   .rsvp { top: calc(12px + env(safe-area-inset-top, 0px)); }
-  .rsvp-head { padding: 12px 18px; font-size: 12.5px; }
+  .rsvp-head { padding: 12px 18px; font-size: 12.5px; min-height: 48px; }
 
   .tab-body { padding: 40px 22px 24px; }
   .tab-body p { font-size: 17px; }
