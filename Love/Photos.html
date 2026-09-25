@@ -436,18 +436,21 @@ html.room-for-map .map-panel { display: block; }
   }
   .cell { grid-area: unset !important; }
 
+  /* Floats a little above the bottom edge (and above the iPhone home
+     bar) so it's never jammed against, or hidden past, the bottom. */
   .side-tabs {
     top: auto;
     right: 0;
-    bottom: 0;
+    bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    padding: 0 10px;
   }
   .tab-trigger,
   .tab.open .tab-trigger {
     width: 100%;
+    min-width: 0;
     justify-content: center;
     border-radius: 999px;
     padding: 12px 10px;
@@ -457,7 +460,12 @@ html.room-for-map .map-panel { display: block; }
   }
   .tab-trigger svg { width: 17px; height: 17px; }
   .label-full { display: none; }
-  .label-short { display: inline; }
+  .label-short {
+    display: inline-block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .rsvp { top: calc(12px + env(safe-area-inset-top, 0px)); }
   .rsvp-head { padding: 12px 18px; font-size: 12.5px; }
@@ -469,6 +477,24 @@ html.room-for-map .map-panel { display: block; }
   .tab-directions .tab-body ol { font-size: 16.5px; }
 
   .d-quick-link, .d-quick-link-bridge { display: none; }
+}
+
+/* Very narrow phones (older/small iPhones, Android minis): drop the icons
+   and tighten the lettering so both columns always fit. */
+@media (max-width: 350px) {
+  .tab-trigger svg { display: none; }
+  .tab-trigger,
+  .tab.open .tab-trigger { font-size: 11.5px; letter-spacing: 0.06em; padding: 11px 8px; }
+  .side-tabs { gap: 5px; padding: 0 8px; }
+}
+/* Short screens (phone turned sideways): shrink the side tabs a bit
+   so all four always fit top to bottom. */
+@media (min-width: 701px) and (max-height: 480px) {
+  .side-tabs { gap: 3px; }
+  .tab-trigger { padding: 10px 18px 10px 12px; font-size: 12.5px; }
+  .tab-trigger svg { width: 17px; height: 17px; }
+  .rsvp { top: 12px; }
+  .rsvp-head { padding: 11px 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -733,8 +759,13 @@ const Rsvp = (function () {
       collapse();
     });
   }
-  // Keyboard: tabbing onto it expands it too
-  box.addEventListener("focusin", expand);
+  // Keyboard: tabbing onto it expands it too. (Ignore the focus a tap
+  // gives the button on Android — otherwise one tap would open it and
+  // the tap handler below would immediately close it again.)
+  box.addEventListener("focusin", (e) => {
+    if (e.target === head && !head.matches(":focus-visible")) return;
+    expand();
+  });
 
   // --- Phone: tap toggles, double-tap opens the full form page ---
   let tapTimer = null;
@@ -795,8 +826,12 @@ const Rsvp = (function () {
     Farm.show();
   });
 
-  // Clicking/tapping anywhere else closes it
-  document.addEventListener("click", () => { collapse(); Tabs.closeAll(); });
+  // Tapping/clicking anywhere else closes things. Uses pointerdown rather
+  // than click because iPhones don't send "click" for taps on plain photos.
+  document.addEventListener("pointerdown", (e) => {
+    if (!box.contains(e.target)) collapse();
+    if (!e.target.closest(".tab")) Tabs.closeAll();
+  });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") collapse(); });
 
   // Start in the right state
