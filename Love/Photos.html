@@ -5,18 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Random Photo Grid Background</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap');
+
+:root {
+  /* Free area for open cards and the RSVP form. JS fills these in. */
+  --safe-t: 90px;
+  --safe-r: 20px;
+  --safe-b: 20px;
+  --safe-l: 20px;
+}
+
+/* ---------- Page + photo grid ---------- */
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100vh;
-  height: 100dvh; /* accounts for mobile browser chrome so nothing is cut off or leaves a gap */
+  height: 100dvh;
   overflow: hidden;
-  overscroll-behavior: none; /* stops mobile "rubber-band" bounce scroll from leaking to the page */
-  position: fixed; /* belt-and-suspenders: pins the page in place even if something inside grows taller than the viewport */
+  overscroll-behavior: none;
+  position: fixed;
   inset: 0;
   background: #ffffff;
+  -webkit-tap-highlight-color: transparent;
 }
 .grid {
   position: fixed;
@@ -37,27 +48,12 @@ html, body {
     "p9 p10 p11 t2 p12 p13"
     "p14 p15 p16 t2 p17 p18";
 }
-/* On narrow screens, 6 columns makes every photo a tall sliver — reflow
-   to 3 columns instead. The JS only assigns background images by grid-area
-   name; it doesn't care how those areas are visually arranged, so this is
-   purely a layout change. Cells get their grid-area set inline by JS, so
-   `!important` is needed here to actually override that per-cell value. */
-@media (max-width: 700px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(7, 1fr);
-    grid-template-areas: none;
-  }
-  .cell {
-    grid-area: unset !important;
-  }
-}
 .cell {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #e9e4da; /* shows briefly only before any photo has ever loaded */
+  background-color: #e9e4da;
 }
 .cell-layer {
   position: absolute;
@@ -66,173 +62,160 @@ html, body {
   background-position: center;
   background-repeat: no-repeat;
   opacity: 0;
-  transition: opacity 0.35s ease; /* keep in sync with CELL_FADE_MS in the script below */
+  transition: opacity 0.35s ease;
 }
-.cell-layer.active {
-  opacity: 1;
-}
+.cell-layer.active { opacity: 1; }
 
-/* --- Embedded Google Form widget, top-right corner ---
-   Hover-based crop-reveal: collapsed shows the "RSVP" label (or
-   "Thanks for RSVPing!" if already responded); hovering expands just
-   enough to fit a typical multi-question form. It's a different
-   origin, so we can't see its actual rendered height — if your form
-   is taller/shorter than this, --rsvp-form-expanded-h is the one
-   number to adjust; the card scrolls internally if content runs
-   past it, so it won't ever cut a field off, just may need a scroll. */
-:root {
-  --rsvp-form-collapsed-h: 110px;   /* collapsed: shows just the RSVP title */
-  --rsvp-form-expanded-h: min(420px, 78vh); /* hover, before responding: compact, capped so it can't exceed a short screen */
-  --rsvp-thanks-collapsed-h: 60px;  /* collapsed, after responding: "Thanks for RSVPing!" only */
-  --rsvp-thanks-expanded-h: 112px;  /* hover, after responding: reveals the Edit link too, no further */
-}
-.form-expand-container {
+.scrim {
   position: fixed;
-  top: 80px;
-  right: 20px;
-  width: min(320px, calc(100vw - 40px));
-  height: var(--rsvp-form-collapsed-h);
-  z-index: 1000;
-}
-.form-crop-wrapper {
-  width: 100%;
-  height: var(--rsvp-form-collapsed-h);
-  overflow: hidden !important;
-  position: absolute;
-  top: 0;
-  left: 0;
-  opacity: 0.7;
-  border-radius: 12px;
-  background: transparent;
-  backdrop-filter: none;
-  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
-}
-/* Floats OVER lower content without pushing it */
-.form-crop-wrapper:hover,
-.form-crop-wrapper:focus-within {
-  height: var(--rsvp-form-expanded-h);
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  z-index: 999;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  overscroll-behavior: contain;
-}
-.form-crop-wrapper iframe {
-  width: 100%;
-  height: 780px;
-  border: none;
-  background: transparent;
-}
-.form-crop-wrapper:not(:hover):not(:focus-within) iframe {
-  margin-top: -15px;
-}
-
-/* Explicit "RSVP" text label covering the collapsed state, instead of
-   relying on a cropped peek of the real form. Fades away on hover to
-   reveal the actual form underneath. */
-.form-crop-wrapper .rsvp-pill-label {
-  position: absolute;
   inset: 0;
-  z-index: 2;
+  background: rgba(30, 24, 20, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 999;
+}
+body.tab-open .scrim { opacity: 1; }
+
+/* ---------- Shared pill look ---------- */
+.pill {
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 16px;
-  box-sizing: border-box;
-  background: rgba(247, 244, 239, 0.9);
+  gap: 10px;
+  margin: 0;
+  border: 0;
+  background: rgba(247, 244, 239, 0.94);
+  color: #2a2622;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 600;
   font-size: 14px;
-  letter-spacing: 0.1em;
+  line-height: 1;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #2a2622;
+  text-decoration: none;
   white-space: nowrap;
-  transition: opacity 0.3s ease;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background 0.25s ease, color 0.25s ease, padding 0.25s ease;
 }
-.form-crop-wrapper:hover .rsvp-pill-label,
-.form-crop-wrapper:focus-within .rsvp-pill-label {
-  opacity: 0;
-  pointer-events: none;
+.pill svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
 }
-.form-crop-wrapper.responded .rsvp-pill-label {
-  display: none;
+.pill:focus, .rsvp button:focus, .rsvp a:focus { outline: none; }
+.pill:focus-visible, .rsvp button:focus-visible, .rsvp a:focus-visible {
+  outline: 2px solid #6b4c3a;
+  outline-offset: -3px;
+}
+.tab.open .pill {
+  background: #2a2622;
+  color: #f7f4ef;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pill:hover {
+    background: #2a2622;
+    color: #f7f4ef;
+  }
 }
 
-/* --- "Already RSVP'd" state: a real crop-reveal, same idea as the form
-       above. Collapsed shows only the "Thanks for RSVPing!" line; hover
-       grows the box just enough to reveal the Edit link below it, and
-       stops — no further expansion. --- */
-.form-crop-wrapper.responded {
-  height: var(--rsvp-thanks-collapsed-h) !important;
-  opacity: 1;
-  background: rgba(247, 244, 239, 0.9);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  display: block;
+/* ---------- RSVP: pill that expands into the form ----------
+   Collapsed: just "RSVP" (or "Thanks for your RSVP!").
+   Expanded: grows left and down into the free space on screen —
+   never over the side tabs or past the bottom of the screen. */
+.rsvp {
+  position: fixed;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  right: 0;
+  z-index: 1020;
+  width: var(--rsvp-w-closed, auto);
+  background: rgba(247, 244, 239, 0.96);
+  border-radius: 22px 0 0 22px;
+  overflow: hidden;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.4s ease,
+              box-shadow 0.4s ease;
 }
-.form-crop-wrapper.responded:hover,
-.form-crop-wrapper.responded:focus-within {
-  height: var(--rsvp-thanks-expanded-h) !important;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+.rsvp.expanded {
+  width: var(--rsvp-w-open);
+  border-radius: 14px 0 0 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
 }
-.form-crop-wrapper.responded iframe {
-  display: none;
-}
-.form-crop-wrapper .rsvp-thanks {
-  display: none;
-}
-.form-crop-wrapper.responded .rsvp-thanks {
-  display: block;
+.rsvp-head {
   width: 100%;
-}
-/* Exactly fills the collapsed height, so "Thanks for RSVPing!" is
-   precisely vertically centered in the resting state. */
-.form-crop-wrapper .rsvp-thanks .rsvp-title-row {
-  height: var(--rsvp-thanks-collapsed-h);
-  display: flex;
-  align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 0 16px;
-  box-sizing: border-box;
+  padding: 14px 24px;
+  background: transparent;
+  border-radius: 0;
 }
-/* Takes up exactly the remaining space between collapsed and expanded
-   height — so hover reveals precisely down to this row and no further. */
-.form-crop-wrapper .rsvp-thanks .rsvp-edit-row {
-  height: calc(var(--rsvp-thanks-expanded-h) - var(--rsvp-thanks-collapsed-h));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0 16px;
-  box-sizing: border-box;
+.rsvp-head .label { flex-shrink: 0; }
+.rsvp.expanded .rsvp-head {
+  background: #2a2622;
+  color: #f7f4ef;
 }
-.form-crop-wrapper .rsvp-thanks p {
-  margin: 0;
+.rsvp .t-thanks { display: none; }
+.rsvp[data-state="thanks"] .t-form { display: none; }
+.rsvp[data-state="thanks"] .t-thanks { display: inline; }
+
+.rsvp-panel {
+  height: 0;
+  overflow: hidden;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.rsvp.expanded .rsvp-panel { height: var(--rsvp-panel-h, 0px); }
+.rsvp-panel > * { display: none; }
+.rsvp[data-state="form"]   .rsvp-form-wrap,
+.rsvp[data-state="ask"]    .rsvp-ask,
+.rsvp[data-state="thanks"] .rsvp-thanks { display: block; }
+
+.rsvp-form-wrap { height: 100%; }
+.rsvp-form-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}
+.rsvp-ask,
+.rsvp-thanks {
+  padding: 14px 20px 16px;
+  text-align: center;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 0.04em;
   color: #2a2622;
 }
-.form-crop-wrapper .rsvp-thanks a {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: #6b4c3a;
-  text-decoration: underline;
+.rsvp-ask p { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
+.rsvp-ask .row { display: flex; gap: 8px; justify-content: center; }
+.rsvp-ask button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 15px;
   cursor: pointer;
+  background: rgba(42, 38, 34, 0.08);
+  color: #2a2622;
+  transition: background 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.rsvp-ask button.yes { background: #2a2622; color: #f7f4ef; }
+.rsvp-thanks a,
+.rsvp-open-full {
+  font-style: italic;
+  font-size: 15px;
+  color: #6b4c3a;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rsvp-ask button:hover { background: #6b4c3a; color: #f7f4ef; }
+  .rsvp-thanks a:hover { color: #2a2622; }
 }
 
-/* --- Shared wrapper for the four left-side tabs (Statement of Purpose,
-       Directions, The Invitation, General Info) — stacked flush
-       against the left edge, vertically centered as a group. --- */
+/* ---------- Left side tabs (desktop) ---------- */
 .side-tabs {
   position: fixed;
   top: 0;
@@ -241,487 +224,184 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: flex-start;
   gap: 4px;
   z-index: 1000;
-  max-height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
-
-/* --- Statement of Purpose, side tab --- */
-.purpose-btn {
-  position: relative;
-  display: block;
-  --card-w: min(600px, 90vw);
-  --card-h: min(300px, 58vh);
-}
-.purpose-btn .p-trigger {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  height: auto;
+.tab { position: relative; }
+.tab-trigger {
   padding: 14px 22px 14px 16px;
   border-radius: 0 999px 999px 0;
-  background: rgba(247, 244, 239, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-left: none;
-  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  position: relative;
-  z-index: 2;
 }
-.purpose-btn:hover .p-trigger,
-.purpose-btn:focus-within .p-trigger {
-  background: #f7f4ef;
-  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
+.tab.open .tab-trigger { padding-left: 24px; }
+@media (hover: hover) and (pointer: fine) {
+  .tab-trigger:hover { padding-left: 24px; }
 }
-.purpose-btn .p-trigger svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: #2a2622;
-  stroke-width: 1.4;
-}
-.purpose-btn .p-trigger .label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #2a2622;
-  white-space: nowrap;
-}
-.purpose-btn .p-reveal {
+.label-short { display: none; }
+
+/* ---------- Cards ---------- */
+.tab-stage {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  width: var(--card-w);
-  height: var(--card-h);
-  transform: translate(-50%, -50%) scale(0.92);
-  background: #f7f4ef;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1001;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+  top: var(--safe-t);
+  right: var(--safe-r);
+  bottom: var(--safe-b);
+  left: var(--safe-l);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 26px 40px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.purpose-btn:hover .p-reveal,
-.purpose-btn:focus-within .p-reveal {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.purpose-btn .p-reveal .p-content p {
-  margin: 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 19px;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-  color: #2a2622;
-  text-align: center;
-}
-
-/* --- The Invitation, side tab, hover reveals Invitation.jpg --- */
-.invitation-btn {
-  position: relative;
-  display: block;
-  --card-w: min(520px, 90vw);
-  --card-h: min(680px, 88vh);
-}
-.invitation-btn .i-trigger {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  height: auto;
-  padding: 14px 22px 14px 16px;
-  border-radius: 0 999px 999px 0;
-  background: rgba(247, 244, 239, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-left: none;
-  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  position: relative;
-  z-index: 2;
-}
-.invitation-btn:hover .i-trigger,
-.invitation-btn:focus-within .i-trigger {
-  background: #f7f4ef;
-  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
-}
-.invitation-btn .i-trigger svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: #2a2622;
-  stroke-width: 1.4;
-}
-.invitation-btn .i-trigger .label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #2a2622;
-  white-space: nowrap;
-}
-.invitation-btn .i-reveal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: var(--card-w);
-  height: var(--card-h);
-  transform: translate(-50%, -50%) scale(0.92);
-  background: #f7f4ef;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  opacity: 0;
+  gap: 44px;
   pointer-events: none;
   z-index: 1011;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  overflow: hidden;
 }
-.invitation-btn:hover .i-reveal,
-.invitation-btn:focus-within .i-reveal {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.invitation-btn .i-reveal img {
-  max-width: 100%;
+.tab-card {
+  position: relative;
+  width: min(var(--card-w), 100%);
   max-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #f7f4ef;
+  border-radius: 10px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  transform: scale(0.94);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+.tab.open .tab-card {
+  transform: scale(1);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .side-tabs:not(:has(.tab.open)) .tab:hover .tab-card {
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+}
+.tab-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 36px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+.tab-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b4c3a;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-close:hover { background: rgba(0, 0, 0, 0.06); }
+.tab-close:focus { outline: none; }
+.tab-close:focus-visible { outline: 2px solid #6b4c3a; }
+
+.tab-body p,
+.tab-body li {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  color: #2a2622;
+  letter-spacing: 0.01em;
+}
+.tab-body p { margin: 0 0 12px; font-size: 18px; line-height: 1.55; }
+.tab-body ul, .tab-body ol { margin: 0; padding-left: 22px; font-size: 17px; line-height: 1.6; }
+.tab-body li { margin-bottom: 8px; }
+
+.tab-purpose    { --card-w: 600px; }
+.tab-invitation { --card-w: 520px; }
+.tab-info       { --card-w: 560px; }
+.tab-directions { --card-w: 520px; }
+
+.tab-purpose .tab-body p { text-align: center; font-size: 19px; line-height: 1.5; margin: 0; }
+.tab-invitation .tab-card { width: auto; max-width: min(var(--card-w), 100%); }
+.tab-invitation .tab-body { padding: 20px; }
+.tab-invitation img {
+  max-width: 100%;
+  max-height: calc(100dvh - var(--safe-t) - var(--safe-b) - 40px);
   object-fit: contain;
   border-radius: 4px;
   display: block;
 }
-.invitation-btn .i-reveal .i-fallback {
+.tab-invitation .i-fallback { display: none; font-style: italic; color: #6b4c3a; text-align: center; margin: 20px; }
+.tab-invitation img.i-broken { display: none; }
+.tab-invitation img.i-broken ~ .i-fallback { display: block; }
+.tab-directions .tab-body p { font-size: 19px; line-height: 1.6; }
+.tab-directions .tab-body ol { font-size: 18px; }
+.tab-directions .tab-body ol ul { margin-top: 6px; font-size: 16px; }
+.tab-directions .tab-body ol ul li { color: #55504a; }
+
+.maps-inline {
+  display: inline-block;
+  margin-top: 8px;
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
-  font-size: 16px;
-  color: #6b4c3a;
-  text-align: center;
-  display: none;
-}
-.invitation-btn .i-reveal img.i-broken {
-  display: none;
-}
-.invitation-btn .i-reveal img.i-broken ~ .i-fallback {
-  display: block;
-}
-
-/* --- General Info, side tab --- */
-.before-btn {
-  position: relative;
-  display: block;
-  --card-w: min(560px, 90vw);
-  --card-h: min(420px, 70vh);
-}
-.before-btn .b-trigger {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  height: auto;
-  padding: 14px 22px 14px 16px;
-  border-radius: 0 999px 999px 0;
-  background: rgba(247, 244, 239, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-left: none;
-  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  position: relative;
-  z-index: 2;
-}
-.before-btn:hover .b-trigger,
-.before-btn:focus-within .b-trigger {
-  background: #f7f4ef;
-  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
-}
-.before-btn .b-trigger svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: #2a2622;
-  stroke-width: 1.4;
-}
-.before-btn .b-trigger .label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #2a2622;
-  white-space: nowrap;
-}
-.before-btn .b-reveal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: var(--card-w);
-  height: var(--card-h);
-  transform: translate(-50%, -50%) scale(0.92);
-  background: #f7f4ef;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1011;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 40px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.before-btn:hover .b-reveal,
-.before-btn:focus-within .b-reveal {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.before-btn .b-reveal .b-content p {
-  margin: 0 0 12px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
-  line-height: 1.55;
-  letter-spacing: 0.01em;
-  color: #2a2622;
-  text-align: left;
-}
-.before-btn .b-reveal .b-content ul {
-  margin: 0;
-  padding-left: 20px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 17px;
-  line-height: 1.6;
-  color: #2a2622;
-  text-align: left;
+  color: #6b4c3a;
 }
-.before-btn .b-reveal .b-content li {
-  margin-bottom: 8px;
-}
+html.room-for-map .maps-inline { display: none; }
 
-/* --- Directions for Arriving, side tab --- */
-.directions-btn {
-  position: relative;
-  display: block;
-  --card-w: min(520px, 90vw);
-  --card-h: min(600px, 88vh);
-}
-.directions-btn .d-toggle {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-.directions-btn .d-trigger {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  height: auto;
-  padding: 14px 22px 14px 16px;
-  border-radius: 0 999px 999px 0;
-  background: rgba(247, 244, 239, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-left: none;
-  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  position: relative;
-  z-index: 2;
-}
-.directions-btn .d-toggle:checked ~ .d-trigger,
-.directions-btn:hover .d-trigger {
-  background: #f7f4ef;
-  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.2);
-}
-.directions-btn .d-trigger svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: #2a2622;
-  stroke-width: 1.4;
-}
-.directions-btn .d-trigger .label {
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #2a2622;
-  white-space: nowrap;
-}
-.directions-btn .d-quick-link {
+.d-quick-link {
   position: absolute;
   top: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(-4px);
   margin-top: 8px;
-  padding: 6px 16px;
+  padding: 7px 16px;
   border-radius: 999px;
-  background: rgba(247, 244, 239, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(247, 244, 239, 0.94);
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
-  font-size: 13px;
+  font-size: 14px;
   color: #6b4c3a;
   text-decoration: none;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  z-index: 2;
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
-.directions-btn:hover .d-quick-link {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
-.directions-btn .d-quick-link:hover {
-  background: #f7f4ef;
-}
-.directions-btn .d-quick-link-bridge {
+.d-quick-link:hover { background: #2a2622; color: #f7f4ef; }
+.d-quick-link-bridge {
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 220px;
+  left: 0;
+  width: 100%;
   height: 20px;
-  z-index: 1;
 }
-.directions-btn .d-reveal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: var(--card-w);
-  height: var(--card-h);
-  transform: translate(-50%, -50%) scale(0.92);
+.map-panel {
+  display: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: 280px;
+  height: 220px;
   background: #f7f4ef;
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 1011;
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 36px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.directions-btn .d-toggle:checked ~ .d-reveal,
-.directions-btn:hover .d-reveal {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  pointer-events: auto;
-}
-.directions-btn .d-reveal .d-content p {
-  margin: 0 0 14px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 19px;
-  line-height: 1.6;
-  letter-spacing: 0.01em;
-  color: #2a2622;
-  text-align: left;
-}
-.directions-btn .d-reveal .d-content ol,
-.directions-btn .d-reveal .d-content ul {
-  margin: 0;
-  padding-left: 22px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 18px;
-  line-height: 1.6;
-  color: #2a2622;
-  text-align: left;
-}
-.directions-btn .d-reveal .d-content li {
-  margin-bottom: 10px;
-}
-.directions-btn .d-reveal .d-content ul {
-  margin-top: 6px;
-  font-size: 16px;
-  color: #55504a;
-}
-.directions-btn .d-map-panel {
-  position: fixed;
-  top: calc(50% - (var(--card-h) / 2));
-  left: calc(50% + (var(--card-w) / 2) + 44px);
-  width: min(280px, 32vw);
-  height: min(220px, 32vh);
-  background: #f7f4ef;
-  border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
   overflow: hidden;
+  transform: scale(0.94);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  z-index: 1011;
-  transform: scale(0.92);
-  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
-  display: flex;
-  flex-direction: column;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, visibility 0s linear 0.3s;
 }
-.directions-btn .d-toggle:checked ~ .d-map-panel,
-.directions-btn:hover .d-map-panel {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-.directions-btn .d-map-panel iframe {
-  width: 100%;
-  flex: 1;
-  border: 0;
-  display: block;
-}
-/* Covers Google's own "view larger map" link baked into the embed's
-   top-left corner — that's cross-origin content we can't edit, only
-   visually mask. pointer-events:auto so clicks land on the patch
-   (does nothing) instead of passing through to the hidden link.
-   .d-map-panel is already position:fixed, which is itself a valid
-   positioning context for this absolutely-positioned patch. */
-.directions-btn .d-map-panel::before {
+html.room-for-map .map-panel { display: block; }
+.map-panel iframe { width: 100%; height: 100%; border: 0; display: block; }
+.map-panel::before {
   content: "";
   position: absolute;
   top: 0;
@@ -730,166 +410,465 @@ html, body {
   height: 26px;
   background: #f7f4ef;
   z-index: 2;
+}
+.map-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 46px;
+}
+.tab-directions.open .map-panel {
+  transform: scale(1);
+  opacity: 1;
+  visibility: visible;
   pointer-events: auto;
+  transition-delay: 0s;
 }
-.directions-btn .d-hover-bridge {
-  position: fixed;
-  top: calc(50% - (var(--card-h) / 2));
-  left: calc(50% + (var(--card-w) / 2));
-  width: 44px;
-  height: var(--card-h);
-  z-index: 1011;
-  pointer-events: none;
+@media (hover: hover) and (pointer: fine) {
+  .tab-directions:hover .d-quick-link {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .side-tabs:not(:has(.tab.open)) .tab-directions:hover .map-panel {
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
 }
-.directions-btn:hover .d-hover-bridge {
-  pointer-events: auto;
-}
-@media (max-width: 760px) {
-  .directions-btn .d-map-panel {
+
+/* ---------- Phones: tabs become a 2×2 bar along the bottom ---------- */
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    grid-template-areas: none;
+  }
+  .cell { grid-area: unset !important; }
+
+  .side-tabs {
     top: auto;
-    bottom: calc(50% - (var(--card-h) / 2) - 240px);
-    left: 50%;
-    transform: translateX(-50%) scale(0.92);
-    width: min(340px, 88vw);
-    height: 200px;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
   }
-  .directions-btn .d-toggle:checked ~ .d-map-panel,
-  .directions-btn:hover .d-map-panel {
-    transform: translateX(-50%) scale(1);
+  .tab-trigger,
+  .tab.open .tab-trigger {
+    width: 100%;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 12px 10px;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    gap: 8px;
   }
-  .directions-btn .d-hover-bridge {
-    display: none;
-  }
+  .tab-trigger svg { width: 17px; height: 17px; }
+  .label-full { display: none; }
+  .label-short { display: inline; }
+
+  .rsvp { top: calc(12px + env(safe-area-inset-top, 0px)); }
+  .rsvp-head { padding: 12px 18px; font-size: 12.5px; }
+
+  .tab-body { padding: 40px 22px 24px; }
+  .tab-body p { font-size: 17px; }
+  .tab-purpose .tab-body p { font-size: 18px; }
+  .tab-directions .tab-body p { font-size: 17px; }
+  .tab-directions .tab-body ol { font-size: 16.5px; }
+
+  .d-quick-link, .d-quick-link-bridge { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-card, .map-panel, .cell-layer, .grid, .rsvp, .rsvp-panel { transition-duration: 0.01s !important; }
 }
 </style>
 </head>
 <body>
 <div class="grid" id="grid"></div>
+<div class="scrim"></div>
 
-<div class="form-expand-container" id="rsvpContainer">
-  <div class="form-crop-wrapper" id="rsvpWrapper">
-    <div class="rsvp-pill-label">RSVP</div>
-    <iframe
-      id="rsvpIframe"
-      src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
-      width="100%"
-      frameborder="0"
-      marginheight="0"
-      marginwidth="0">
-      Loading…
-    </iframe>
+<!-- RSVP
+     Computer: hover to expand the form here, click the pill to open the form in a new tab.
+     Phone: tap to expand, double-tap to open the form in a new tab. -->
+<div class="rsvp" id="rsvp" data-state="form">
+  <button class="pill rsvp-head" id="rsvpHead" type="button" aria-expanded="false">
+    <span class="label t-form">RSVP</span>
+    <span class="label t-thanks">Thanks for your RSVP!</span>
+  </button>
+  <div class="rsvp-panel" id="rsvpPanel">
+    <div class="rsvp-form-wrap">
+      <iframe id="rsvpIframe"
+        src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
+        title="RSVP form">Loading…</iframe>
+    </div>
+    <div class="rsvp-ask" id="rsvpAsk">
+      <p>Did your RSVP go through?</p>
+      <div class="row">
+        <button type="button" class="yes" id="rsvpYes">Yes</button>
+        <button type="button" id="rsvpNo">Not yet</button>
+      </div>
+    </div>
     <div class="rsvp-thanks" id="rsvpThanks">
-      <div class="rsvp-title-row">
-        <p>Thanks for RSVPing!</p>
-      </div>
-      <div class="rsvp-edit-row">
-        <a href="#" id="rsvpEditLink">Edit your response</a>
-      </div>
+      <a href="#" id="rsvpChange">Change my response</a>
     </div>
   </div>
 </div>
 
-<div class="side-tabs">
-  <div class="purpose-btn">
-    <div class="p-trigger" tabindex="0">
+<nav class="side-tabs" id="sideTabs">
+  <div class="tab tab-purpose">
+    <button class="pill tab-trigger" type="button" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M8 12h8M8 16h5"/></svg>
-      <span class="label">Statement of Purpose</span>
-    </div>
-    <div class="p-reveal">
-      <div class="p-content">
-        <p>We are all caught in an inescapable net of mutuality with one another. As Joanna and I join in marital union August 7th, our obligation grows not only toward each other, but also toward our closest friends and family. We hope that our marriage fosters an ongoing and stable commitment to each other, such that we may be known as a unity whom you all may depend on for anything life may throw your way, small or large. We are all stronger together than alone.</p>
+      <span class="label-full">Statement of Purpose</span><span class="label-short">Purpose</span>
+    </button>
+    <div class="tab-stage">
+      <div class="tab-card" role="dialog" aria-label="Statement of Purpose">
+        <button class="tab-close" type="button" aria-label="Close">&times;</button>
+        <div class="tab-body">
+          <p>We are all caught in an inescapable net of mutuality with one another. As Joanna and I join in marital union August 7th, our obligation grows not only toward each other, but also toward our closest friends and family. We hope that our marriage fosters an ongoing and stable commitment to each other, such that we may be known as a unity whom you all may depend on for anything life may throw your way, small or large. We are all stronger together than alone.</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="invitation-btn">
-    <div class="i-trigger" tabindex="0">
+  <div class="tab tab-invitation">
+    <button class="pill tab-trigger" type="button" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M4 6l8 7 8-7"/></svg>
-      <span class="label">The Invitation</span>
-    </div>
-    <div class="i-reveal">
-      <img
-        src="../Invitation.jpg"
-        alt="Wedding invitation"
-        onerror="this.classList.add('i-broken')">
-      <p class="i-fallback">Invitation coming soon.</p>
-    </div>
-  </div>
-
-  <div class="before-btn">
-    <div class="b-trigger" tabindex="0">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5"/><path d="M12 11v5"/></svg>
-      <span class="label">General Info</span>
-    </div>
-    <div class="b-reveal">
-      <div class="b-content">
-        <p>Joanna and I are getting married, and you are invited!</p>
-        <ul>
-          <li>The wedding will take place on August 7th on a farm in Virginia. The address is 15227 Berlin Turnpike, Purcellville, VA 20132.</li>
-          <li>You are welcome to bring a plus one — friend or lover — but they must RSVP also!</li>
-          <li>For those with more adventurous personalities (or just fewer funds), you are welcome to camp on the property! We expect to be able to find tents for everyone who wants/needs one, but bringing your own would also be welcome.</li>
-          <li>We won't be doing a registry — instead, we invite people to donate their time/bodies as they wish to help with various wedding prep.</li>
-          <li>Anyone can come as early as they want to set up camp/hangout and help. We will probably arrive ourselves about a week before.</li>
-        </ul>
+      <span class="label-full">The Invitation</span><span class="label-short">Invitation</span>
+    </button>
+    <div class="tab-stage">
+      <div class="tab-card" role="dialog" aria-label="The Invitation">
+        <button class="tab-close" type="button" aria-label="Close">&times;</button>
+        <div class="tab-body">
+          <img src="../Invitation.jpg" alt="Wedding invitation" onerror="this.classList.add('i-broken')">
+          <p class="i-fallback">Invitation coming soon.</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="directions-btn">
-    <input type="checkbox" id="directions-toggle" class="d-toggle">
-    <label for="directions-toggle" class="d-trigger">
+  <div class="tab tab-info">
+    <button class="pill tab-trigger" type="button" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5"/><path d="M12 11v5"/></svg>
+      <span class="label-full">General Info</span><span class="label-short">Info</span>
+    </button>
+    <div class="tab-stage">
+      <div class="tab-card" role="dialog" aria-label="General Info">
+        <button class="tab-close" type="button" aria-label="Close">&times;</button>
+        <div class="tab-body">
+          <p>Joanna and I are getting married, and you are invited!</p>
+          <ul>
+            <li>The wedding will take place on August 7th on a farm in Virginia. The address is 15227 Berlin Turnpike, Purcellville, VA 20132.</li>
+            <li>You are welcome to bring a plus one — friend or lover — but they must RSVP also!</li>
+            <li>For those with more adventurous personalities (or just fewer funds), you are welcome to camp on the property! We expect to be able to find tents for everyone who wants/needs one, but bringing your own would also be welcome.</li>
+            <li>We won't be doing a registry — instead, we invite people to donate their time/bodies as they wish to help with various wedding prep.</li>
+            <li>Anyone can come as early as they want to set up camp/hangout and help. We will probably arrive ourselves about a week before.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab tab-directions">
+    <button class="pill tab-trigger" type="button" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-      <span class="label">Directions for Arriving</span>
-    </label>
+      <span class="label-full">Directions for Arriving</span><span class="label-short">Directions</span>
+    </button>
     <div class="d-quick-link-bridge"></div>
     <a class="d-quick-link"
        href="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15"
-       target="_blank" rel="noopener noreferrer">
-      Open in Google Maps ↗
-    </a>
-    <div class="d-reveal">
-      <div class="d-content">
-        <p>When you arrive at 15227 Berlin Turnpike, Purcellville, VA, 20132, you will see a fence and a road curving right.</p>
-        <ol>
-          <li>Turn left through the gate.
-            <ul>
-              <li>Remember to hit the button to open the gate! Sometimes it takes a few tries. It can also be slow to react, so be patient and gentle with it. (You must press the button to open the gate from both sides, when you enter and when you leave!)</li>
-            </ul>
-          </li>
-          <li>From there you can follow the dirt road that eventually turns to gravel until you see a roundabout and a green barn on your left, and a parking area on your right.</li>
-          <li>Find a parking spot somewhere on your right.</li>
-          <li>Then, you should be able to find me around the green barn.</li>
-        </ol>
+       target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a>
+    <div class="tab-stage">
+      <div class="tab-card" role="dialog" aria-label="Directions for Arriving">
+        <button class="tab-close" type="button" aria-label="Close">&times;</button>
+        <div class="tab-body">
+          <p>When you arrive at 15227 Berlin Turnpike, Purcellville, VA, 20132, you will see a fence and a road curving right.</p>
+          <ol>
+            <li>Turn left through the gate.
+              <ul>
+                <li>Remember to hit the button to open the gate! Sometimes it takes a few tries. It can also be slow to react, so be patient and gentle with it. (You must press the button to open the gate from both sides, when you enter and when you leave!)</li>
+              </ul>
+            </li>
+            <li>From there you can follow the dirt road that eventually turns to gravel until you see a roundabout and a green barn on your left, and a parking area on your right.</li>
+            <li>Find a parking spot somewhere on your right.</li>
+            <li>Then, you should be able to find me around the green barn.</li>
+          </ol>
+          <a class="maps-inline"
+             href="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15"
+             target="_blank" rel="noopener noreferrer">Open in Google Maps ↗</a>
+        </div>
+      </div>
+      <div class="map-panel">
+        <iframe
+          src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
+          loading="lazy"
+          title="directions map"></iframe>
       </div>
     </div>
-    <div class="d-hover-bridge"></div>
-    <div class="d-map-panel">
-      <iframe
-        src="https://www.google.com/maps?q=15227+Berlin+Turnpike,+Purcellville,+VA&z=15&output=embed"
-        loading="lazy"
-        title="directions map"></iframe>
-    </div>
   </div>
-</div>
+</nav>
 
 <script>
-// ---------------------------------------------------------------
-// 1. Point this at your GitHub repo + the folders containing your photos.
-//    Photos.html itself lives inside /Love/, so paths are relative to that.
-// ---------------------------------------------------------------
+// ===============================================================
+// Settings you might want to change
+// ===============================================================
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform";
+// How many pages (sections) your Google Form has. Each "Next" reloads
+// the form, so this is how the page tells "next page" apart from "submitted".
+const FORM_PAGES = 1;
+// Tallest the expanded form will ever get, in pixels. It also never grows
+// past the bottom of the screen; if the form is longer, it scrolls inside.
+const FORM_MAX_HEIGHT = 1100;
+// Widest the expanded form will get (Google Forms look best around 640).
+const FORM_MAX_WIDTH = 640;
+
+const HAS_HOVER = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+// ===============================================================
+// Tabs
+// ===============================================================
+const Tabs = (function () {
+  const tabs = Array.from(document.querySelectorAll(".tab"));
+  function setOpen(tab, open) {
+    tab.classList.toggle("open", open);
+    tab.querySelector(".tab-trigger").setAttribute("aria-expanded", String(open));
+  }
+  function closeAll() {
+    tabs.forEach((t) => setOpen(t, false));
+    document.body.classList.remove("tab-open");
+  }
+  tabs.forEach((tab) => {
+    tab.querySelector(".tab-trigger").addEventListener("click", () => {
+      const willOpen = !tab.classList.contains("open");
+      closeAll();
+      if (willOpen) {
+        Rsvp.collapse();
+        setOpen(tab, true);
+        document.body.classList.add("tab-open");
+      }
+    });
+    tab.querySelector(".tab-close").addEventListener("click", closeAll);
+    tab.addEventListener("click", (e) => e.stopPropagation());
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+  return { closeAll };
+})();
+
+// ===============================================================
+// RSVP
+// ===============================================================
+const Rsvp = (function () {
+  const DONE_KEY = "rsvpSubmitted";
+  const PENDING_KEY = "rsvpPending";
+  const box = document.getElementById("rsvp");
+  const head = document.getElementById("rsvpHead");
+  const panel = document.getElementById("rsvpPanel");
+  const iframe = document.getElementById("rsvpIframe");
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: (k) => { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  let expanded = false;
+  let loads = 0;
+
+  const state = () => box.dataset.state;
+  const baseState = () => (store.get(DONE_KEY) === "true" ? "thanks" : "form");
+
+  // --- Sizing: collapsed fits its words; expanded fits the free space ---
+  function sizeClosed() {
+    const label = head.querySelector(state() === "thanks" ? ".t-thanks" : ".t-form");
+    const cs = getComputedStyle(head);
+    const w = label.offsetWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    box.style.setProperty("--rsvp-w-closed", Math.ceil(w) + "px");
+  }
+  function sizeOpen() {
+    const L = Layout.limits();
+    const closedW = parseFloat(box.style.getPropertyValue("--rsvp-w-closed")) || 0;
+    const openW = Math.max(closedW, Math.min(FORM_MAX_WIDTH, L.maxWidth));
+    box.style.setProperty("--rsvp-w-open", Math.floor(openW) + "px");
+    let h;
+    if (state() === "form") {
+      h = Math.min(FORM_MAX_HEIGHT, L.bottom - head.getBoundingClientRect().bottom);
+    } else {
+      const body = state() === "ask" ? document.getElementById("rsvpAsk") : document.getElementById("rsvpThanks");
+      h = body.scrollHeight;
+    }
+    box.style.setProperty("--rsvp-panel-h", Math.max(0, Math.floor(h)) + "px");
+  }
+  function resize() { sizeClosed(); sizeOpen(); }
+
+  function setState(s) {
+    box.dataset.state = s;
+    resize();
+  }
+
+  function expand() {
+    if (expanded) return;
+    expanded = true;
+    Tabs.closeAll();
+    sizeOpen();
+    box.classList.add("expanded");
+    head.setAttribute("aria-expanded", "true");
+    if (state() === "form") Farm.show();
+  }
+  function collapse() {
+    if (!expanded) return;
+    expanded = false;
+    box.classList.remove("expanded");
+    head.setAttribute("aria-expanded", "false");
+    if (box.contains(document.activeElement)) document.activeElement.blur();
+    Farm.hide();
+  }
+  function openFullPage() {
+    store.set(PENDING_KEY, "1");
+    window.open(FORM_URL, "_blank", "noopener");
+  }
+
+  // --- Computer: hover expands, click opens the full form page ---
+  if (HAS_HOVER) {
+    box.addEventListener("mouseenter", expand);
+    box.addEventListener("mouseleave", () => {
+      // Keep it open while they're typing in the form
+      if (document.activeElement === iframe) return;
+      collapse();
+    });
+  }
+  // Keyboard: tabbing onto it expands it too
+  box.addEventListener("focusin", expand);
+
+  // --- Phone: tap toggles, double-tap opens the full form page ---
+  let tapTimer = null;
+  head.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (HAS_HOVER) { openFullPage(); return; }
+    if (tapTimer) {
+      clearTimeout(tapTimer);
+      tapTimer = null;
+      openFullPage();
+      return;
+    }
+    tapTimer = setTimeout(() => {
+      tapTimer = null;
+      expanded ? collapse() : expand();
+    }, 280);
+  });
+  box.addEventListener("click", (e) => e.stopPropagation());
+
+  // --- Detect a submit through the embedded form ---
+  iframe.addEventListener("load", () => {
+    loads++;
+    if (loads > FORM_PAGES && state() === "form") {
+      store.set(DONE_KEY, "true");
+      store.del(PENDING_KEY);
+      Farm.hide();
+      setState("thanks");
+    }
+  });
+
+  // --- If they used the full page instead, ask when they come back ---
+  function maybeAsk() {
+    if (document.visibilityState === "visible" && store.get(PENDING_KEY)) {
+      setState("ask");
+      expand();
+    }
+  }
+  document.addEventListener("visibilitychange", maybeAsk);
+  window.addEventListener("focus", maybeAsk);
+  document.getElementById("rsvpYes").addEventListener("click", () => {
+    store.set(DONE_KEY, "true");
+    store.del(PENDING_KEY);
+    setState("thanks");
+  });
+  document.getElementById("rsvpNo").addEventListener("click", () => {
+    store.del(PENDING_KEY);
+    setState(baseState());
+    if (state() === "form") Farm.show();
+  });
+
+  // --- "Change my response" brings the form back ---
+  document.getElementById("rsvpChange").addEventListener("click", (e) => {
+    e.preventDefault();
+    store.del(DONE_KEY);
+    loads = 0;
+    iframe.src = iframe.src;
+    setState("form");
+    Farm.show();
+  });
+
+  // Clicking/tapping anywhere else closes it
+  document.addEventListener("click", () => { collapse(); Tabs.closeAll(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") collapse(); });
+
+  // Start in the right state
+  box.dataset.state = store.get(PENDING_KEY) ? "ask" : baseState();
+
+  return { collapse, resize, isExpanded: () => expanded, maybeAsk };
+})();
+
+// ===============================================================
+// Layout: keeps cards and the RSVP form inside the free space
+// ===============================================================
+const Layout = (function () {
+  const root = document.documentElement;
+  const rsvpHead = document.getElementById("rsvpHead");
+  const sideTabs = document.getElementById("sideTabs");
+  const triggers = Array.from(document.querySelectorAll(".tab-trigger"));
+  const MAP_NEEDS = 520 + 44 + 280;
+  const isPhone = () => window.innerWidth <= 700;
+  let cache = { maxWidth: 640, bottom: window.innerHeight - 20 };
+
+  function update() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const pad = isPhone() ? 10 : 20;
+    const headBottom = rsvpHead.getBoundingClientRect().bottom;
+
+    let left, bottom;
+    if (isPhone()) {
+      left = pad;
+      bottom = sideTabs.getBoundingClientRect().top - pad; // above the bottom bar
+    } else {
+      const tabsRight = Math.max(...triggers.map(t => t.getBoundingClientRect().right));
+      left = (vw - tabsRight - pad * 2 >= 420) ? tabsRight + pad : pad;
+      bottom = vh - pad;
+    }
+    root.style.setProperty("--safe-t", Math.round(headBottom + pad) + "px");
+    root.style.setProperty("--safe-r", pad + "px");
+    root.style.setProperty("--safe-b", Math.round(vh - bottom) + "px");
+    root.style.setProperty("--safe-l", Math.round(left) + "px");
+    root.classList.toggle("room-for-map", !isPhone() && vw - left - pad >= MAP_NEEDS);
+
+    // RSVP form may grow leftward up to the side tabs (desktop) or
+    // nearly edge to edge (phone), and down to `bottom`.
+    const rsvpLeftLimit = isPhone() ? 8 : left;
+    cache = { maxWidth: vw - rsvpLeftLimit, bottom };
+  }
+  function limits() { return cache; }
+  return { update, limits };
+})();
+
+function relayout() { Layout.update(); Rsvp.resize(); }
+window.addEventListener("resize", relayout);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+relayout();
+
+// ===============================================================
+// Photo grid
+// ===============================================================
 const GITHUB_OWNER = "StormfWhite";
 const GITHUB_REPO = "joanna-website";
 const GITHUB_BRANCH = "main";
-
-// Two photo sets: default (this same /Love/ folder, where Photos.html lives)
-// and "Farm" (the /Love/Farm subfolder), shown when hovering the RSVP widget.
 const PHOTO_SETS = {
   default: { apiPath: "Love",      relPrefix: "" },
   farm:    { apiPath: "Love/Farm", relPrefix: "Farm/" }
 };
-
-// Fallback list used only if the GitHub API call fails, for the default set.
-// Kept in sync with the actual contents of /Love/.
 const FALLBACK_IMAGES = [
   "Bonsai.jpg", "IMG_4306.GIF", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
   "SF hike.jpg", "SF top 4.jpg", "Soy.jpg",
@@ -900,20 +879,9 @@ const FALLBACK_IMAGES = [
   "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
   "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
 ];
-
-// No hardcoded fallback for Farm — if the API call fails, that set is
-// simply empty and the grid stays on whatever was showing before.
 const FARM_FALLBACK_IMAGES = [];
-
-// Optional per-photo crop overrides (filename -> background-position)
-const CROP_OVERRIDES = {
-  "cabin.jpg": "30% 40%"
-};
-
-// A width/height ratio below this counts as a "tall" (portrait) photo.
+const CROP_OVERRIDES = { "cabin.jpg": "30% 40%" };
 const PORTRAIT_THRESHOLD = 0.95;
-
-// Slot ids exactly as named in the grid-template-areas above.
 const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
   "p11","p12","p13","p14","p15","p16","p17","p18"];
 const tallSlots = ["t1", "t2", "t3"];
@@ -926,13 +894,9 @@ function shuffle(arr) {
   }
   return a;
 }
-
-// Ask GitHub what image files currently live in the given folder.
 async function fetchImageList(apiPath, fallback) {
   const base = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
-  const url = apiPath
-    ? `${base}/${apiPath}?ref=${GITHUB_BRANCH}`
-    : `${base}?ref=${GITHUB_BRANCH}`;
+  const url = apiPath ? `${base}/${apiPath}?ref=${GITHUB_BRANCH}` : `${base}?ref=${GITHUB_BRANCH}`;
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
@@ -947,20 +911,14 @@ async function fetchImageList(apiPath, fallback) {
     return fallback;
   }
 }
-
-// Load an image just far enough to read its natural dimensions.
 function probe(filename, relPrefix) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => resolve({
-      filename,
-      ratio: img.naturalWidth / img.naturalHeight
-    });
-    img.onerror = () => resolve(null); // skip files that fail to load
+    img.onload = () => resolve({ filename, ratio: img.naturalWidth / img.naturalHeight });
+    img.onerror = () => resolve(null);
     img.src = relPrefix + encodeURIComponent(filename);
   });
 }
-
 function setLayerImage(layer, filename, relPrefix) {
   if (filename) {
     layer.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
@@ -969,11 +927,9 @@ function setLayerImage(layer, filename, relPrefix) {
     layer.style.backgroundImage = "none";
   }
 }
-
 function computeAssignment(valid) {
   const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
   const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
-
   const assignment = {};
   landscapeSlots.forEach((slot, i) => {
     if (landscapePool.length > 0) assignment[slot] = landscapePool[i % landscapePool.length];
@@ -985,67 +941,43 @@ function computeAssignment(valid) {
 }
 
 const grid = document.getElementById("grid");
-
-// One persistent cell per slot, created once, each holding TWO stacked
-// image layers. Swapping sets loads the new photo into whichever layer is
-// currently hidden, then fades that layer in on top of the other — so the
-// old photo stays visible underneath the whole time and there's never a
-// blank/placeholder-color gap mid-swap, just a direct crossfade.
 const ALL_SLOTS = [...landscapeSlots, ...tallSlots];
 const cellMap = {};
 ALL_SLOTS.forEach((area) => {
   const cell = document.createElement("div");
   cell.className = "cell";
   cell.style.gridArea = area;
-
   const layerA = document.createElement("div");
   layerA.className = "cell-layer active";
   const layerB = document.createElement("div");
   layerB.className = "cell-layer";
-
   cell.appendChild(layerA);
   cell.appendChild(layerB);
   grid.appendChild(cell);
-
   cellMap[area] = { layers: [layerA, layerB], activeIndex: 0 };
 });
 
-// Extra delay added per tile so they swap one-by-one in a ripple rather
-// than all at once. Total ripple length ≈ ALL_SLOTS.length * this value.
 const CELL_STAGGER_MS = 40;
-
 let firstRenderDone = false;
-
 function renderGrid(valid, relPrefix) {
   const assignment = computeAssignment(valid);
-
   if (!firstRenderDone) {
-    // Nothing on screen yet (grid starts at opacity: 0 in CSS) — just
-    // populate every tile's active layer directly, then fade the whole
-    // grid in together.
     ALL_SLOTS.forEach((area) => {
       const { layers, activeIndex } = cellMap[area];
       setLayerImage(layers[activeIndex], assignment[area], relPrefix);
     });
     firstRenderDone = true;
-    void grid.offsetWidth; // force a reflow so the browser registers opacity:0 first
-    requestAnimationFrame(() => {
-      grid.style.opacity = "1";
-    });
+    void grid.offsetWidth;
+    requestAnimationFrame(() => { grid.style.opacity = "1"; });
     return;
   }
-
-  // Subsequent swap (Love <-> Farm) — crossfade tiles one at a time in a
-  // shuffled ripple: load the new photo into the hidden layer, then fade
-  // it in over the still-visible old one.
-  const rippleOrder = shuffle(ALL_SLOTS);
-  rippleOrder.forEach((area, i) => {
+  shuffle(ALL_SLOTS).forEach((area, i) => {
     const state = cellMap[area];
     setTimeout(() => {
       const nextIndex = state.activeIndex === 0 ? 1 : 0;
       const nextLayer = state.layers[nextIndex];
       setLayerImage(nextLayer, assignment[area], relPrefix);
-      void nextLayer.offsetWidth; // force reflow so the image is painted before we fade it in
+      void nextLayer.offsetWidth;
       state.layers[state.activeIndex].classList.remove("active");
       nextLayer.classList.add("active");
       state.activeIndex = nextIndex;
@@ -1053,9 +985,7 @@ function renderGrid(valid, relPrefix) {
   });
 }
 
-// Cache each set's probed results so we don't re-fetch/re-probe every hover.
 const setCache = {};
-
 async function loadSet(setKey, fallback) {
   if (setCache[setKey]) return setCache[setKey];
   const { apiPath, relPrefix } = PHOTO_SETS[setKey];
@@ -1066,109 +996,38 @@ async function loadSet(setKey, fallback) {
   return valid;
 }
 
-// Initial render: default photo set.
 loadSet("default", FALLBACK_IMAGES).then((valid) => {
   renderGrid(valid, PHOTO_SETS.default.relPrefix);
 });
 
-// Hovering certain elements swaps the background to Farm photos; leaving
-// reverts to the default set. Shared across every element this is wired to,
-// so quickly moving the mouse between them doesn't cause flicker/races.
-let farmHoverToken = 0;
-
-function enableFarmHoverSwap(el, { isBlocked } = {}) {
-  if (!el) return;
-
-  el.addEventListener("mouseenter", async () => {
-    if (isBlocked && isBlocked()) return;
-    const token = ++farmHoverToken;
+// Farm photos: shown while the RSVP form is open or Directions is hovered.
+const Farm = (function () {
+  let token = 0;
+  let showing = false;
+  async function show() {
+    if (showing) return;
+    showing = true;
+    const t = ++token;
     const valid = await loadSet("farm", FARM_FALLBACK_IMAGES);
-    if (token !== farmHoverToken) return; // a newer hover/unhover happened, discard stale result
-    if (valid.length > 0) {
-      renderGrid(valid, PHOTO_SETS.farm.relPrefix);
-    }
-  });
-
-  el.addEventListener("mouseleave", async () => {
-    if (isBlocked && isBlocked()) return;
-    const token = ++farmHoverToken;
+    if (t !== token) return;
+    if (valid.length > 0) renderGrid(valid, PHOTO_SETS.farm.relPrefix);
+  }
+  async function hide() {
+    if (!showing) return;
+    showing = false;
+    const t = ++token;
     const valid = await loadSet("default", FALLBACK_IMAGES);
-    if (token !== farmHoverToken) return;
+    if (t !== token) return;
     renderGrid(valid, PHOTO_SETS.default.relPrefix);
-  });
-
-  // Also handle keyboard focus (matches the :focus-within expansion behavior).
-  el.addEventListener("focusin", () => el.dispatchEvent(new Event("mouseenter")));
-  el.addEventListener("focusout", () => el.dispatchEvent(new Event("mouseleave")));
-}
-
-// RSVP widget: Farm-photo hover swap disabled once it's in the compact
-// "already responded" state.
-const rsvpWidget = document.querySelector(".form-crop-wrapper");
-enableFarmHoverSwap(rsvpWidget, {
-  isBlocked: () => rsvpWidget.classList.contains("responded")
-});
-
-// Directions for Arriving: always enabled.
-const directionsBtn = document.querySelector(".directions-btn");
-enableFarmHoverSwap(directionsBtn);
-
-// ---------------------------------------------------------------
-// RSVP submission detection.
-//
-// We can't read the Google Form iframe's contents (it's a different
-// origin), so we can't literally check for a "Thanks for responding"
-// message inside it. Instead we use a well-known heuristic: the
-// iframe fires a "load" event once for the initial blank form, and
-// fires a SECOND "load" event when it internally navigates to the
-// confirmation page after a submit — even cross-origin, the load
-// event itself still fires, we just can't see what loaded.
-//
-// Once we see that second load, we treat it as "submitted", remember
-// it in localStorage so returning visitors skip straight to the
-// compact "already responded" state, and swap the UI.
-// ---------------------------------------------------------------
-(function initRsvpSubmissionTracking() {
-  const STORAGE_KEY = "rsvpSubmitted";
-  const wrapper = document.getElementById("rsvpWrapper");
-  const iframe = document.getElementById("rsvpIframe");
-  const editLink = document.getElementById("rsvpEditLink");
-  if (!wrapper || !iframe) return;
-
-  function showResponded() {
-    wrapper.classList.add("responded");
   }
-
-  function showForm() {
-    wrapper.classList.remove("responded");
-  }
-
-  if (localStorage.getItem(STORAGE_KEY) === "true") {
-    showResponded();
-  } else {
-    let loadCount = 0;
-    iframe.addEventListener("load", () => {
-      loadCount++;
-      if (loadCount > 1) {
-        localStorage.setItem(STORAGE_KEY, "true");
-        showResponded();
-      }
-    });
-  }
-
-  // "Edit your response" — we don't have access to a real per-response
-  // edit URL (that's only available inside the confirmation page we
-  // can't read), so this clears the remembered state and reloads the
-  // form fresh, letting them submit an updated response.
-  if (editLink) {
-    editLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      localStorage.removeItem(STORAGE_KEY);
-      showForm();
-      iframe.src = iframe.src; // reload to a clean form
-    });
-  }
+  return { show, hide };
 })();
+const directionsTab = document.querySelector(".tab-directions");
+directionsTab.addEventListener("mouseenter", () => Farm.show());
+directionsTab.addEventListener("mouseleave", () => { if (!Rsvp.isExpanded()) Farm.hide(); });
+
+// If they went to the full form page last visit, ask how it went.
+Rsvp.maybeAsk();
 </script>
 </body>
 </html>
