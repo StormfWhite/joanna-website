@@ -460,12 +460,11 @@ html.room-for-map .map-panel { display: block; }
   }
   .cell { grid-area: unset !important; }
 
-  /* Floats a little above the bottom edge (and above the iPhone home
-     bar) so it's never jammed against, or hidden past, the bottom. */
+  /* Tabs sit in a 2×2 block at the top, clear of the notch/status bar. */
   .side-tabs {
-    top: auto;
+    top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px));
     right: 0;
-    bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+    bottom: auto;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
@@ -492,7 +491,14 @@ html.room-for-map .map-panel { display: block; }
     text-overflow: ellipsis;
   }
 
-  .rsvp { top: calc(12px + env(safe-area-inset-top, 0px)); }
+  /* RSVP sits right under the tabs (JS sets --rsvp-top) and opens
+     downward into the photos, so it never covers the tabs. */
+  .rsvp {
+    top: var(--rsvp-top, 130px);
+    right: 10px;
+    border-radius: 24px;
+  }
+  .rsvp.expanded { border-radius: 14px; }
   .rsvp-head { padding: 12px 18px; font-size: 12.5px; min-height: 48px; }
 
   .tab-body { padding: 40px 22px 24px; }
@@ -897,11 +903,20 @@ const Layout = (function () {
     // one side, we keep clear on the opposite side too.
     let side, vert, bottom, rsvpLeftLimit;
     if (isPhone()) {
-      const barTop = sideTabs.getBoundingClientRect().top;
-      bottom = barTop - pad;                       // RSVP stops above the bottom bar
+      // Everything lives at the top: tabs, then RSVP just below them.
+      const barBottom = sideTabs.getBoundingClientRect().bottom;
+      root.style.setProperty("--rsvp-top", Math.round(barBottom + 8) + "px");
+      const rsvpBottom = rsvpHead.getBoundingClientRect().bottom;
+      bottom = vh - pad;
       side = pad;
-      vert = Math.max(headBottom + pad, vh - barTop + pad);
-      rsvpLeftLimit = 8;
+      // Cards fill the space under the RSVP pill down to the bottom edge.
+      root.style.setProperty("--safe-t", Math.round(rsvpBottom + pad) + "px");
+      root.style.setProperty("--safe-b", pad + "px");
+      root.style.setProperty("--safe-l", side + "px");
+      root.style.setProperty("--safe-r", side + "px");
+      root.classList.remove("room-for-map");
+      cache = { maxWidth: vw - 20, bottom };
+      return;
     } else {
       const tabsRight = Math.max(...triggers.map(t => t.getBoundingClientRect().right));
       bottom = vh - pad;
