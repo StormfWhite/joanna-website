@@ -1,0 +1,48 @@
+# Saves a copy of the RSVP questions onto the site (Love/rsvp-questions.json)
+# so the RSVP opens instantly instead of waiting on Google.
+# Runs every hour by itself; you can also run it by hand after editing the
+# form: Actions tab → "Update RSVP questions" → "Run workflow".
+name: Update RSVP questions
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RSVP_API_URL: "https://script.google.com/macros/s/AKfycbwClva5hZZuRx3ZQwnyr5Ycteh29mTnCxB8_jbMSV5EX4sgVv6bwCRTjddoyRtgcecmhA/exec"
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the questions from the Apps Script
+        run: |
+          curl -sSL --retry 3 --max-time 60 "$RSVP_API_URL?action=schema" -o /tmp/q.json
+          python3 - << 'PYEOF'
+          import json, sys
+          data = json.load(open("/tmp/q.json"))
+          if not data.get("ok") or not data.get("pages"):
+              sys.exit("The Apps Script didn't return the questions: " + json.dumps(data)[:300])
+          with open("Love/rsvp-questions.json", "w") as f:
+              json.dump(data, f, indent=1, ensure_ascii=False)
+          print("Saved", sum(len(p["items"]) for p in data["pages"]), "questions")
+          PYEOF
+
+      - name: Save to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add Love/rsvp-questions.json
+          if git diff --cached --quiet; then
+            echo "Questions unchanged."
+          else
+            git commit -m "Update RSVP questions"
+            git pull --rebase   # in case the other workflow saved something first
+            git push
+          fi
