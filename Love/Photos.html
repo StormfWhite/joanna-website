@@ -17,7 +17,7 @@
   --pill-active: #7d6d61;
   /* Phones: how far down from the top of the screen the tabs start,
      to clear the Squarespace header. Raise or lower this one number. */
-  --phone-top-offset: 5px;
+  --phone-top-offset: 12px;
 }
 
 /* ---------- Page + photo grid ---------- */
@@ -138,10 +138,10 @@ body.tab-open .scrim { opacity: 1; }
   }
 }
 
-/* ---------- RSVP: pill that expands into the form ----------
-   Collapsed: just "RSVP" (or "Thanks for your RSVP!").
-   Expanded: grows left and down into the free space on screen —
-   never over the side tabs or past the bottom of the screen. */
+/* ---------- RSVP ----------
+   Collapsed: "RSVP here" → "Finish your RSVP" → small "Thanks for your RSVP!"
+   Expanded: the RSVP questions, built right here on the page from your
+   Google Form, sized exactly to fit whatever is showing. */
 .rsvp {
   position: fixed;
   top: calc(24px + env(safe-area-inset-top, 0px));
@@ -172,9 +172,16 @@ body.tab-open .scrim { opacity: 1; }
   background: var(--pill-active);
   color: #f7f4ef;
 }
-.rsvp .t-thanks { display: none; }
-.rsvp[data-state="thanks"] .t-form { display: none; }
-.rsvp[data-state="thanks"] .t-thanks { display: inline; }
+/* After they've sent it: a quieter, smaller pill */
+.rsvp[data-status="done"] .rsvp-head {
+  min-height: 0;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
 
 .rsvp-panel {
   height: 0;
@@ -182,52 +189,111 @@ body.tab-open .scrim { opacity: 1; }
   transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .rsvp.expanded .rsvp-panel { height: var(--rsvp-panel-h, 0px); }
-.rsvp-panel > * { display: none; }
-.rsvp[data-state="form"]   .rsvp-form-wrap,
-.rsvp[data-state="ask"]    .rsvp-ask,
-.rsvp[data-state="thanks"] .rsvp-thanks { display: block; }
-
-.rsvp-form-wrap { height: 100%; }
-.rsvp-form-wrap iframe {
-  width: 100%;
+.rsvp-content {
   height: 100%;
-  border: 0;
-  display: block;
-  background: transparent;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
-.rsvp-ask,
-.rsvp-thanks {
-  padding: 14px 20px 16px;
-  text-align: center;
+.rsvp-inner {
+  box-sizing: border-box;
+  padding: 18px 22px 20px;
   font-family: 'Cormorant Garamond', Georgia, serif;
   color: #2a2622;
 }
-.rsvp-ask .fit,
-.rsvp-thanks .fit { display: inline-block; white-space: nowrap; }
-.rsvp-ask p { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
-.rsvp-ask .row { display: flex; gap: 8px; justify-content: center; }
-.rsvp-ask button {
+.rsvp-inner.fit { display: inline-block; white-space: nowrap; padding: 12px 20px 14px; }
+
+.rf-title { margin: 0 0 4px; font-size: 22px; font-weight: 600; }
+.rf-page-title { margin: 0 0 4px; font-size: 19px; font-weight: 600; }
+.rf-help { margin: 0 0 12px; font-size: 15px; line-height: 1.45; color: #6b5f55; white-space: pre-line; }
+.rf-section { margin: 4px 0 14px; }
+.rf-q { margin: 0 0 18px; padding: 0; border: 0; min-width: 0; }
+.rf-label { display: block; padding: 0; margin: 0 0 6px; font-size: 17px; font-weight: 600; line-height: 1.3; }
+.rf-q .rf-help { margin-bottom: 8px; }
+.rf-req { color: #9b4a3a; }
+.rf-q input[type="text"],
+.rf-q input[type="email"],
+.rf-q input[type="date"],
+.rf-q input[type="time"],
+.rf-q textarea,
+.rf-q select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid rgba(42, 38, 34, 0.2);
+  border-radius: 8px;
+  background: #fffdf9;
+  color: #2a2622;
+  font: 16px/1.4 'Cormorant Garamond', Georgia, serif; /* 16px stops iPhones zooming in */
+  -webkit-appearance: none;
+  appearance: none;
+}
+.rf-q textarea { resize: vertical; min-height: 70px; }
+.rf-q select {
+  background-image: linear-gradient(45deg, transparent 50%, #6b5f55 50%), linear-gradient(135deg, #6b5f55 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+.rf-q input:focus,
+.rf-q textarea:focus,
+.rf-q select:focus { outline: none; border-color: var(--pill-active); box-shadow: 0 0 0 2px rgba(125, 109, 97, 0.2); }
+.rf-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 17px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+.rf-choice input[type="radio"],
+.rf-choice input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--pill-active);
+}
+.rf-other input[type="text"] { flex: 1; min-width: 0; padding: 5px 10px; }
+.rf-scale { display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap; }
+.rf-scale .rf-scale-end { font-size: 14px; color: #6b5f55; padding-bottom: 4px; }
+.rf-scale label { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; cursor: pointer; min-width: 26px; }
+.rf-scale input { accent-color: var(--pill-active); width: 18px; height: 18px; margin: 0; }
+.rf-error-msg { display: none; margin: 6px 0 0; font-size: 14px; font-style: italic; color: #9b4a3a; }
+.rf-q.invalid .rf-error-msg { display: block; }
+.rf-q.invalid .rf-error-email,
+.rf-q.bad-email .rf-error-msg { display: none; }
+.rf-q.bad-email .rf-error-email { display: block; }
+.rf-q.invalid input[type="text"], .rf-q.invalid input[type="email"], .rf-q.invalid textarea, .rf-q.invalid select { border-color: #9b4a3a; }
+.rf-nav { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.rf-step { font-size: 14px; font-style: italic; color: #6b5f55; }
+.rf-btn {
   border: 0;
   border-radius: 999px;
-  padding: 8px 16px;
-  font: inherit;
-  font-size: 15px;
-  cursor: pointer;
+  padding: 11px 20px;
   background: rgba(42, 38, 34, 0.08);
   color: #2a2622;
-  transition: background 0.2s ease, color 0.2s ease;
+  font: 600 14px/1 'Cormorant Garamond', Georgia, serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.rsvp-ask button.yes { background: var(--pill-active); color: #f7f4ef; }
-.rsvp-thanks a,
-.rsvp-open-full {
-  font-style: italic;
-  font-size: 15px;
-  color: #6b4c3a;
-}
+.rf-btn.primary { margin-left: auto; background: var(--pill-active); color: #f7f4ef; }
+.rf-btn:disabled { opacity: 0.6; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
-  .rsvp-ask button:hover { background: #6b4c3a; color: #f7f4ef; }
-  .rsvp-thanks a:hover { color: #2a2622; }
+  .rf-btn:not(:disabled):hover { background: #6b4c3a; color: #f7f4ef; }
+}
+.rf-status { margin: 10px 0 0; font-size: 15px; font-style: italic; color: #9b4a3a; }
+.rf-center { margin: 0; text-align: center; font-size: 16px; line-height: 1.5; }
+.rsvp-inner a { font-style: italic; color: #6b4c3a; }
+@media (hover: hover) and (pointer: fine) {
+  .rsvp-inner a:hover { color: #2a2622; }
 }
 
 /* ---------- Left side tabs (desktop) ---------- */
@@ -540,31 +606,15 @@ html.room-for-map .map-panel { display: block; }
 <div class="grid" id="grid"></div>
 <div class="scrim"></div>
 
-<!-- RSVP
-     Computer: hover to expand the form here, click the pill to open the form in a new tab.
-     Phone: tap to expand, double-tap to open the form in a new tab. -->
-<div class="rsvp" id="rsvp" data-state="form">
+<!-- RSVP: collapsed pill that expands into the RSVP questions.
+     Computer: hover to peek, click to keep it open. Phone: tap to open/close. -->
+<div class="rsvp" id="rsvp" data-status="new" data-view="loading">
   <button class="pill rsvp-head" id="rsvpHead" type="button" aria-expanded="false">
-    <span class="label t-form">RSVP</span>
-    <span class="label t-thanks">Thanks for your RSVP!</span>
+    <span class="label">RSVP here</span>
   </button>
   <div class="rsvp-panel" id="rsvpPanel">
-    <div class="rsvp-form-wrap">
-      <iframe id="rsvpIframe"
-        src="https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform?embedded=true"
-        title="RSVP form">Loading…</iframe>
-    </div>
-    <div class="rsvp-ask" id="rsvpAsk">
-      <div class="fit">
-        <p>Did your RSVP go through?</p>
-        <div class="row">
-          <button type="button" class="yes" id="rsvpYes">Yes</button>
-          <button type="button" id="rsvpNo">Not yet</button>
-        </div>
-      </div>
-    </div>
-    <div class="rsvp-thanks" id="rsvpThanks">
-      <div class="fit"><a href="#" id="rsvpChange">Change my response</a></div>
+    <div class="rsvp-content" id="rsvpContent">
+      <div class="rsvp-inner" id="rsvpInner"></div>
     </div>
   </div>
 </div>
@@ -666,15 +716,13 @@ html.room-for-map .map-panel { display: block; }
 // ===============================================================
 // Settings you might want to change
 // ===============================================================
+// Paste your Google Apps Script web app URL here (it ends in /exec).
+// Setup steps are at the top of rsvp-apps-script.gs.
+const RSVP_API_URL = "https://script.google.com/macros/s/AKfycbwtDmguoO5dzS0bMAxaxU82txtunMTngS34ASFm3Hxzf5nx6mR6Ate25guCIpfgKhpfNg/exec";
+// Backup link shown only if the RSVP questions can't be loaded.
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScj2KLzfLznw3txaZyVH-RDl4VjWw2DsFIb98RMQYj1A8fB9Q/viewform";
-// How many pages (sections) your Google Form has. Each "Next" reloads
-// the form, so this is how the page tells "next page" apart from "submitted".
-const FORM_PAGES = 1;
-// Tallest the expanded form will ever get, in pixels. It also never grows
-// past the bottom of the screen; if the form is longer, it scrolls inside.
-const FORM_MAX_HEIGHT = 1100;
-// Widest the expanded form will get (Google Forms look best around 640).
-const FORM_MAX_WIDTH = 640;
+// Widest the open RSVP will get, in pixels.
+const FORM_MAX_WIDTH = 520;
 
 const HAS_HOVER = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
@@ -721,168 +769,434 @@ document.querySelectorAll(".tab-body").forEach((body) => {
 
 // ===============================================================
 // RSVP
+// The questions come live from your Google Form (through the Apps
+// Script), and answers are sent back into that same form — so the
+// page knows for certain when an RSVP has actually gone through.
 // ===============================================================
 const Rsvp = (function () {
-  const DONE_KEY = "rsvpSubmitted";
-  const PENDING_KEY = "rsvpPending";
+  const KEY = "rsvp.v2";
+  const SCHEMA_KEY = "rsvp.schema";
   const box = document.getElementById("rsvp");
   const head = document.getElementById("rsvpHead");
-  const panel = document.getElementById("rsvpPanel");
-  const iframe = document.getElementById("rsvpIframe");
+  const headLabel = head.querySelector(".label");
+  const content = document.getElementById("rsvpContent");
+  const inner = document.getElementById("rsvpInner");
   const store = {
     get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
-    del: (k) => { try { localStorage.removeItem(k); } catch (e) {} }
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }
   };
-  let expanded = false;
-  let loads = 0;
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const isEmailQ = (q) => q.kind === "text" && /e-?mail/i.test(q.title);
+  const isNameQ = (q) => q.kind === "text" && /\bname\b/i.test(q.title);
+  const looksLikeEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const isEmpty = (v) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
 
-  const state = () => box.dataset.state;
-  const baseState = () => (store.get(DONE_KEY) === "true" ? "thanks" : "form");
+  // ---- Saved state on this device ----
+  // status: "new" (never opened) | "started" (opened, not sent) | "done" (sent)
+  let S = { status: "new", answers: {}, page: 0, history: [], responseId: null };
+  try { Object.assign(S, JSON.parse(store.get(KEY)) || {}); } catch (e) {}
+  if (!Array.isArray(S.history)) S.history = [];
+  if (S.status === "new" && store.get("rsvpSubmitted") === "true") S.status = "done"; // from the old version
+  const save = () => store.set(KEY, JSON.stringify(S));
 
-  // --- Sizing: collapsed fits its words; expanded fits the free space ---
+  let schema = null;
+  try { schema = JSON.parse(store.get(SCHEMA_KEY)); } catch (e) {}
+  let schemaFailed = false;
+  let expanded = false, pinned = false, editing = false, sending = false;
+  let sendError = "";
+
+  // ---- What to show ----
+  function view() {
+    if (S.status === "done" && !editing) return "done";
+    if (schema && schema.pages && schema.pages.length) return "form";
+    return schemaFailed ? "error" : "loading";
+  }
+  function labelText() {
+    if (S.status === "done") return "Thanks for your RSVP!";
+    if (S.status === "started") return "Finish your RSVP";
+    return "RSVP here";
+  }
+  function renderHead() {
+    headLabel.textContent = labelText();
+    box.dataset.status = S.status;
+    sizeClosed();
+  }
+
+  function render() {
+    renderHead();
+    const v = view();
+    box.dataset.view = v;
+    inner.classList.toggle("fit", v !== "form");
+    if (v === "done") {
+      inner.innerHTML = `<p class="rf-center"><a href="#" data-nav="change">Change my response</a></p>`;
+    } else if (v === "loading") {
+      inner.innerHTML = `<p class="rf-center">Loading…</p>`;
+    } else if (v === "error") {
+      inner.innerHTML = `<p class="rf-center">The RSVP form didn't load.<br>
+        <a href="${esc(FORM_URL)}" target="_blank" rel="noopener noreferrer">Open it in Google Forms ↗</a></p>`;
+    } else {
+      renderForm();
+    }
+    sizeOpen();
+  }
+
+  function pageItems() {
+    const pages = schema.pages;
+    S.page = Math.max(0, Math.min(S.page || 0, pages.length - 1));
+    return pages[S.page].items;
+  }
+
+  function itemHtml(q) {
+    const id = "rf" + q.id;
+    const val = S.answers[q.id];
+    const req = q.required ? ` <span class="rf-req" aria-hidden="true">*</span>` : "";
+    const help = q.help ? `<p class="rf-help">${esc(q.help)}</p>` : "";
+    const err = `<p class="rf-error-msg">This one's required.</p>`;
+    const reqAttr = q.required ? ` aria-required="true"` : "";
+    switch (q.kind) {
+      case "header":
+        return `<div class="rf-section"><p class="rf-page-title">${esc(q.title)}</p>${help}</div>`;
+      case "text":
+      case "date":
+      case "time": {
+        let type = q.kind === "text" ? "text" : q.kind;
+        let extra = "";
+        if (isEmailQ(q)) { type = "email"; extra = ` inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false"`; }
+        else if (isNameQ(q)) { extra = ` autocomplete="name" autocapitalize="words"`; }
+        const emailErr = isEmailQ(q) ? `<p class="rf-error-msg rf-error-email">That email doesn't look quite right.</p>` : "";
+        return `<div class="rf-q" data-q="${q.id}"><label class="rf-label" for="${id}">${esc(q.title)}${req}</label>${help}
+          <input type="${type}" id="${id}" data-a="${q.id}" value="${esc(val || "")}"${extra}${reqAttr}>${err}${emailErr}</div>`;
+      }
+      case "paragraph":
+        return `<div class="rf-q" data-q="${q.id}"><label class="rf-label" for="${id}">${esc(q.title)}${req}</label>${help}
+          <textarea id="${id}" data-a="${q.id}" rows="3"${reqAttr}>${esc(val || "")}</textarea>${err}</div>`;
+      case "select":
+        return `<div class="rf-q" data-q="${q.id}"><label class="rf-label" for="${id}">${esc(q.title)}${req}</label>${help}
+          <select id="${id}" data-a="${q.id}"${reqAttr}><option value="">Choose…</option>
+          ${q.choices.map((c) => `<option value="${esc(c)}"${c === val ? " selected" : ""}>${esc(c)}</option>`).join("")}
+          </select>${err}</div>`;
+      case "radio":
+      case "checkbox": {
+        const picked = q.kind === "checkbox" ? (Array.isArray(val) ? val : []) : (isEmpty(val) ? [] : [val]);
+        const otherVal = picked.find((v) => !q.choices.includes(v));
+        let html = q.choices.map((c) => `<label class="rf-choice">
+            <input type="${q.kind}" name="${id}" data-a="${q.id}" value="${esc(c)}"${picked.includes(c) ? " checked" : ""}>
+            <span>${esc(c)}</span></label>`).join("");
+        if (q.other) {
+          html += `<label class="rf-choice rf-other">
+            <input type="${q.kind}" name="${id}" data-a="${q.id}" value="__other__"${otherVal !== undefined ? " checked" : ""}>
+            <span>Other:</span><input type="text" data-other="${q.id}" value="${esc(otherVal || "")}" aria-label="Other"></label>`;
+        }
+        return `<fieldset class="rf-q" data-q="${q.id}"><legend class="rf-label">${esc(q.title)}${req}</legend>${help}${html}${err}</fieldset>`;
+      }
+      case "scale": {
+        let html = q.lowLabel ? `<span class="rf-scale-end">${esc(q.lowLabel)}</span>` : "";
+        for (let n = q.low; n <= q.high; n++) {
+          html += `<label><span>${n}</span><input type="radio" name="${id}" data-a="${q.id}" value="${n}"${Number(val) === n && !isEmpty(val) ? " checked" : ""}></label>`;
+        }
+        if (q.highLabel) html += `<span class="rf-scale-end">${esc(q.highLabel)}</span>`;
+        return `<fieldset class="rf-q" data-q="${q.id}"><legend class="rf-label">${esc(q.title)}${req}</legend>${help}
+          <div class="rf-scale">${html}</div>${err}</fieldset>`;
+      }
+    }
+    return "";
+  }
+
+  // ---- Section jumps (follows the form's "go to section" settings) ----
+  function pageIndexById(id) { return schema.pages.findIndex((p) => p.id === id); }
+  function nextTarget() {
+    const pages = schema.pages;
+    const page = pages[S.page];
+    const fallback = S.page + 1 < pages.length ? S.page + 1 : "submit";
+    let nav = null;
+    page.items.forEach((q) => {
+      if (q.kind === "radio" && q.nav) {
+        const i = q.choices.indexOf(S.answers[q.id]);
+        if (i >= 0 && q.nav[i]) nav = q.nav[i];
+      }
+    });
+    if (!nav) nav = page.after || null;
+    if (!nav || nav.t === "continue" || nav.t === "restart") return fallback;
+    if (nav.t === "submit") return "submit";
+    const j = pageIndexById(nav.to);
+    return j >= 0 ? j : fallback;
+  }
+  function hasBranching() {
+    return schema.pages.some((p) => (p.after && p.after.t !== "continue") || p.items.some((q) => q.nav));
+  }
+  function mainButtonLabel(last) {
+    return last ? (sending ? "Sending…" : editing ? "Update RSVP" : "Send RSVP") : "Next";
+  }
+  // Switch Next ↔ Send as answers change which section comes next
+  function updateMainButton() {
+    const btn = inner.querySelector(".rf-btn.primary");
+    if (!btn || sending) return;
+    const last = nextTarget() === "submit";
+    btn.dataset.nav = last ? "send" : "next";
+    btn.textContent = mainLabelFor(last);
+  }
+  const mainLabelFor = mainButtonLabel;
+
+  function renderForm() {
+    const pages = schema.pages;
+    const items = pageItems();
+    const page = pages[S.page];
+    const last = nextTarget() === "submit";
+    let html = "";
+    if (S.page === 0 && schema.description) html += `<p class="rf-help">${esc(schema.description)}</p>`;
+    if (page.title) html += `<p class="rf-page-title">${esc(page.title)}</p>`;
+    if (page.help) html += `<p class="rf-help">${esc(page.help)}</p>`;
+    html += items.map(itemHtml).join("");
+    const left = (S.history.length || S.page > 0)
+      ? `<button type="button" class="rf-btn" data-nav="back">Back</button>`
+      : (editing ? `<button type="button" class="rf-btn" data-nav="cancel">Never mind</button>` : "");
+    const step = pages.length > 1 && !hasBranching() ? `<span class="rf-step">${S.page + 1} of ${pages.length}</span>` : "";
+    const mainLabel = mainButtonLabel(last);
+    html += `<div class="rf-nav">${left}${step}
+      <button type="button" class="rf-btn primary" data-nav="${last ? "send" : "next"}"${sending ? " disabled" : ""}>${mainLabel}</button></div>`;
+    if (sendError) html += `<p class="rf-status">${esc(sendError)}</p>`;
+    inner.innerHTML = html;
+  }
+
+  // ---- Reading answers ----
+  function readAnswer(q) {
+    const el = inner.querySelector(`[data-q="${q.id}"]`);
+    if (!el) return S.answers[q.id];
+    if (["text", "paragraph", "select", "date", "time"].includes(q.kind)) {
+      return el.querySelector("[data-a]").value.trim();
+    }
+    const picked = Array.from(el.querySelectorAll("input[data-a]:checked"))
+      .map((i) => (i.value === "__other__" ? el.querySelector("[data-other]").value.trim() : i.value))
+      .filter((v) => v !== "");
+    if (q.kind === "scale") return picked.length ? Number(picked[0]) : "";
+    return q.kind === "checkbox" ? picked : (picked[0] || "");
+  }
+  function captureAnswers() {
+    if (view() !== "form") return;
+    pageItems().forEach((q) => { if (q.kind !== "header") S.answers[q.id] = readAnswer(q); });
+    save();
+  }
+  function validatePage() {
+    let first = null;
+    pageItems().forEach((q) => {
+      const el = inner.querySelector(`[data-q="${q.id}"]`);
+      const v = S.answers[q.id];
+      const missing = q.required && isEmpty(v);
+      const badEmail = !missing && isEmailQ(q) && !isEmpty(v) && !looksLikeEmail(v);
+      const bad = missing || badEmail;
+      if (el) {
+        el.classList.toggle("invalid", bad);
+        el.classList.toggle("bad-email", badEmail);
+      }
+      if (bad && !first) first = el;
+    });
+    if (first) {
+      first.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const input = first.querySelector("input, textarea, select");
+      if (input) input.focus({ preventScroll: true });
+    }
+    return !first;
+  }
+
+  inner.addEventListener("input", (e) => {
+    // Typing in an "Other" box ticks its choice automatically
+    if (e.target.dataset.other) {
+      const choice = e.target.closest(".rf-other").querySelector("input[data-a]");
+      if (choice && !choice.checked && e.target.value) choice.checked = true;
+    }
+    captureAnswers();
+    updateMainButton();
+    const q = e.target.closest(".rf-q");
+    if (q) q.classList.remove("invalid", "bad-email");
+  });
+  inner.addEventListener("change", () => { captureAnswers(); updateMainButton(); });
+
+  inner.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-nav]");
+    if (!btn) return;
+    e.preventDefault();
+    const nav = btn.dataset.nav;
+    if (nav === "change") {
+      editing = true;
+      S.page = 0;
+      S.history = [];
+      sendError = "";
+      render();
+      Farm.show();
+      return;
+    }
+    if (nav === "cancel") {
+      editing = false;
+      S.page = 0;
+      S.history = [];
+      render();
+      Farm.hide();
+      return;
+    }
+    captureAnswers();
+    if (nav === "back") {
+      S.page = S.history.length ? S.history.pop() : Math.max(0, S.page - 1);
+      save(); render(); content.scrollTop = 0; return;
+    }
+    if (!validatePage()) return;
+    const target = nextTarget();
+    if (target === "submit") { submit(); return; }
+    S.history.push(S.page);
+    S.page = target;
+    save(); render(); content.scrollTop = 0;
+  });
+
+  // ---- Talking to the Apps Script ----
+  async function submit() {
+    if (!RSVP_API_URL) { sendError = "The RSVP isn't connected yet."; render(); return; }
+    sending = true;
+    sendError = "";
+    render();
+    try {
+      const answers = [];
+      const visited = new Set(S.history.concat([S.page]));
+      schema.pages.forEach((p, i) => {
+        if (!visited.has(i)) return; // skipped sections don't get sent
+        p.items.forEach((q) => {
+          if (q.kind !== "header" && !isEmpty(S.answers[q.id])) answers.push({ id: q.id, value: S.answers[q.id] });
+        });
+      });
+      const res = await fetch(RSVP_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // keeps the request simple for Google
+        body: JSON.stringify({ action: "submit", answers, replaceId: editing ? S.responseId : null })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Submit failed");
+      S.status = "done";
+      S.responseId = data.id;
+      S.page = 0;
+      S.history = [];
+      editing = false;
+      save();
+      Farm.hide();
+    } catch (err) {
+      console.error("RSVP send failed:", err);
+      sendError = "That didn't go through. Check your connection and try again.";
+    }
+    sending = false;
+    render();
+  }
+
+  async function loadSchema() {
+    if (!RSVP_API_URL) { if (!schema) schemaFailed = true; render(); return; }
+    try {
+      const res = await fetch(RSVP_API_URL + "?action=schema");
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Schema failed");
+      const changed = JSON.stringify(data) !== JSON.stringify(schema);
+      schema = data;
+      store.set(SCHEMA_KEY, JSON.stringify(data));
+      // Don't redraw under someone's fingers while they're filling it in
+      if (changed && !(expanded && view() === "form")) render();
+    } catch (err) {
+      console.warn("Couldn't load RSVP questions:", err);
+      if (!schema) { schemaFailed = true; render(); }
+    }
+  }
+
+  // Double-check with Google that a remembered RSVP still exists
+  async function verify() {
+    if (S.status !== "done" || !S.responseId || !RSVP_API_URL) return;
+    try {
+      const res = await fetch(`${RSVP_API_URL}?action=status&id=${encodeURIComponent(S.responseId)}`);
+      const data = await res.json();
+      if (data.ok && data.submitted === false) {
+        S.status = "started";
+        S.responseId = null;
+        save();
+        if (!(expanded && editing)) render();
+      }
+    } catch (err) { /* offline etc. — keep what we have */ }
+  }
+
+  // ---- Sizing: fits its words when closed, fits its content when open ----
   function sizeClosed() {
-    const label = head.querySelector(state() === "thanks" ? ".t-thanks" : ".t-form");
     const cs = getComputedStyle(head);
-    const w = label.offsetWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const w = headLabel.offsetWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
     box.style.setProperty("--rsvp-w-closed", Math.ceil(w) + "px");
   }
   function sizeOpen() {
     const L = Layout.limits();
     const closedW = parseFloat(box.style.getPropertyValue("--rsvp-w-closed")) || 0;
-    let openW, h;
-    if (state() === "form") {
-      openW = Math.min(FORM_MAX_WIDTH, L.maxWidth);
-      h = Math.min(FORM_MAX_HEIGHT, L.bottom - head.getBoundingClientRect().bottom);
+    let w;
+    if (view() === "form") {
+      w = Math.max(closedW, Math.min(FORM_MAX_WIDTH, L.maxWidth));
+      inner.style.width = Math.floor(w) + "px"; // measure at the real open width
     } else {
-      // Only as wide and tall as what it's actually showing.
-      const body = state() === "ask" ? document.getElementById("rsvpAsk") : document.getElementById("rsvpThanks");
-      const cs = getComputedStyle(body);
-      const contentW = body.querySelector(".fit").offsetWidth + parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      openW = Math.min(contentW, L.maxWidth);
-      h = body.scrollHeight;
+      inner.style.width = "";
+      w = Math.max(closedW, Math.min(inner.offsetWidth, L.maxWidth));
     }
-    openW = Math.max(closedW, openW);
-    box.style.setProperty("--rsvp-w-open", Math.floor(openW) + "px");
-    box.style.setProperty("--rsvp-panel-h", Math.max(0, Math.floor(h)) + "px");
+    const room = L.bottom - head.getBoundingClientRect().bottom;
+    const h = Math.max(0, Math.min(inner.offsetHeight, room));
+    box.style.setProperty("--rsvp-w-open", Math.floor(w) + "px");
+    box.style.setProperty("--rsvp-panel-h", Math.floor(h) + "px");
   }
   function resize() { sizeClosed(); sizeOpen(); }
 
-  function setState(s) {
-    box.dataset.state = s;
-    resize();
-  }
-
+  // ---- Opening / closing ----
   function expand() {
     if (expanded) return;
     expanded = true;
     Tabs.closeAll();
-    sizeOpen();
+    if (S.status === "new") { S.status = "started"; save(); }
+    render();
     box.classList.add("expanded");
     head.setAttribute("aria-expanded", "true");
-    if (state() === "form") Farm.show();
+    if (S.status !== "done" || editing) Farm.show();
   }
   function collapse() {
     if (!expanded) return;
     expanded = false;
+    pinned = false;
+    if (view() === "form") captureAnswers();
     box.classList.remove("expanded");
     head.setAttribute("aria-expanded", "false");
     if (box.contains(document.activeElement)) document.activeElement.blur();
     Farm.hide();
   }
-  function openFullPage() {
-    store.set(PENDING_KEY, "1");
-    window.open(FORM_URL, "_blank", "noopener");
-  }
 
-  // --- Computer: hover expands, click opens the full form page ---
   if (HAS_HOVER) {
     box.addEventListener("mouseenter", expand);
     box.addEventListener("mouseleave", () => {
-      // Keep it open while they're typing in the form
-      if (document.activeElement === iframe) return;
+      // Stay open if it's been clicked open or they're typing in it
+      if (pinned || box.contains(document.activeElement)) return;
       collapse();
     });
   }
-  // Keyboard: tabbing onto it expands it too. (Ignore the focus a tap
-  // gives the button on Android — otherwise one tap would open it and
-  // the tap handler below would immediately close it again.)
   box.addEventListener("focusin", (e) => {
     if (e.target === head && !head.matches(":focus-visible")) return;
     expand();
   });
-
-  // --- Phone: tap toggles, double-tap opens the full form page ---
-  let tapTimer = null;
-  head.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (HAS_HOVER) { openFullPage(); return; }
-    if (tapTimer) {
-      clearTimeout(tapTimer);
-      tapTimer = null;
-      openFullPage();
-      return;
-    }
-    tapTimer = setTimeout(() => {
-      tapTimer = null;
-      expanded ? collapse() : expand();
-    }, 280);
-  });
-  box.addEventListener("click", (e) => e.stopPropagation());
-
-  // --- Detect a submit through the embedded form ---
-  iframe.addEventListener("load", () => {
-    loads++;
-    if (loads > FORM_PAGES && state() === "form") {
-      store.set(DONE_KEY, "true");
-      store.del(PENDING_KEY);
-      Farm.hide();
-      setState("thanks");
-    }
+  head.addEventListener("click", () => {
+    if (expanded && (pinned || !HAS_HOVER)) { collapse(); return; }
+    expand();
+    pinned = true;
   });
 
-  // --- If they used the full page instead, ask when they come back ---
-  function maybeAsk() {
-    if (document.visibilityState === "visible" && store.get(PENDING_KEY)) {
-      setState("ask");
-      expand();
-    }
-  }
-  document.addEventListener("visibilitychange", maybeAsk);
-  window.addEventListener("focus", maybeAsk);
-  document.getElementById("rsvpYes").addEventListener("click", () => {
-    store.set(DONE_KEY, "true");
-    store.del(PENDING_KEY);
-    setState("thanks");
-  });
-  document.getElementById("rsvpNo").addEventListener("click", () => {
-    store.del(PENDING_KEY);
-    setState(baseState());
-    if (state() === "form") Farm.show();
-  });
-
-  // --- "Change my response" brings the form back ---
-  document.getElementById("rsvpChange").addEventListener("click", (e) => {
-    e.preventDefault();
-    store.del(DONE_KEY);
-    loads = 0;
-    iframe.src = iframe.src;
-    setState("form");
-    Farm.show();
-  });
-
-  // Tapping/clicking anywhere else closes things. Uses pointerdown rather
-  // than click because iPhones don't send "click" for taps on plain photos.
   document.addEventListener("pointerdown", (e) => {
     if (!box.contains(e.target)) collapse();
     if (!e.target.closest(".tab")) Tabs.closeAll();
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") collapse(); });
 
-  // Start in the right state
-  box.dataset.state = store.get(PENDING_KEY) ? "ask" : baseState();
+  function init() {
+    render();
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(() => sizeOpen()).observe(inner);
+      new ResizeObserver(() => relayout()).observe(head);
+    }
+    loadSchema();
+    verify();
+  }
 
-  return { collapse, resize, isExpanded: () => expanded, maybeAsk };
+  return { collapse, resize, init, isExpanded: () => expanded };
 })();
 
 // ===============================================================
@@ -1111,8 +1425,8 @@ const directionsTab = document.querySelector(".tab-directions");
 directionsTab.addEventListener("mouseenter", () => Farm.show());
 directionsTab.addEventListener("mouseleave", () => { if (!Rsvp.isExpanded()) Farm.hide(); });
 
-// If they went to the full form page last visit, ask how it went.
-Rsvp.maybeAsk();
+// Start the RSVP once everything it uses exists.
+Rsvp.init();
 </script>
 </body>
 </html>
