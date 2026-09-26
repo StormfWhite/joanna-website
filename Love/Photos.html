@@ -139,7 +139,7 @@ body.tab-open .scrim { opacity: 1; }
 }
 
 /* ---------- RSVP ----------
-   Collapsed: "RSVP here" → "Finish your RSVP" → small "Thanks for your RSVP!"
+   Collapsed: "RSVP here" → "RSVP in progress" → small "Thanks for your RSVP!"
    Expanded: the RSVP questions, built right here on the page from your
    Google Form, sized exactly to fit whatever is showing. */
 .rsvp {
@@ -814,7 +814,7 @@ const Rsvp = (function () {
   }
   function labelText() {
     if (S.status === "done") return "Thanks for your RSVP!";
-    if (S.status === "started") return "Finish your RSVP";
+    if (S.status === "started") return "RSVP in progress";
     return "RSVP here";
   }
   function renderHead() {
@@ -911,13 +911,14 @@ const Rsvp = (function () {
     const fallback = S.page + 1 < pages.length ? S.page + 1 : "submit";
     let nav = null;
     page.items.forEach((q) => {
-      if (q.kind === "radio" && q.nav) {
+      if ((q.kind === "radio" || q.kind === "select") && q.nav) {
         const i = q.choices.indexOf(S.answers[q.id]);
         if (i >= 0 && q.nav[i]) nav = q.nav[i];
       }
     });
     if (!nav) nav = page.after || null;
-    if (!nav || nav.t === "continue" || nav.t === "restart") return fallback;
+    if (!nav || nav.t === "continue") return fallback;
+    if (nav.t === "restart") return 0; // "Go to section 1"
     if (nav.t === "submit") return "submit";
     const j = pageIndexById(nav.to);
     return j >= 0 ? j : fallback;
