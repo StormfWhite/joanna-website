@@ -1085,19 +1085,37 @@ const Rsvp = (function () {
     render();
   }
 
+  function applySchema(data) {
+    if (!data || !data.ok || !Array.isArray(data.pages) || !data.pages.length) return false;
+    // Don't redraw under someone's fingers while they're filling it in
+    const busy = expanded && view() === "form";
+    const changed = JSON.stringify(data) !== JSON.stringify(schema);
+    schema = data;
+    schemaFailed = false;
+    store.set(SCHEMA_KEY, JSON.stringify(data));
+    if (changed && !busy) render();
+    return true;
+  }
+
   async function loadSchema() {
-    if (!RSVP_API_URL) { if (!schema) schemaFailed = true; render(); return; }
+    let gotLive = false;
+    // 1. Fast: a copy of the questions saved right on the site
+    //    (rsvp-questions.json, kept up to date by the GitHub Action).
+    const quick = fetch("rsvp-questions.json", { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (!gotLive) applySchema(data); })
+      .catch(() => {});
+    // 2. Live from Google — slower, but always current. Wins when it arrives.
     try {
+      if (!RSVP_API_URL) throw new Error("No RSVP_API_URL");
       const res = await fetch(RSVP_API_URL + "?action=schema");
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "Schema failed");
-      const changed = JSON.stringify(data) !== JSON.stringify(schema);
-      schema = data;
-      store.set(SCHEMA_KEY, JSON.stringify(data));
-      // Don't redraw under someone's fingers while they're filling it in
-      if (changed && !(expanded && view() === "form")) render();
+      gotLive = true;
+      applySchema(data);
     } catch (err) {
-      console.warn("Couldn't load RSVP questions:", err);
+      console.warn("Couldn't load live RSVP questions:", err);
+      await quick;
       if (!schema) { schemaFailed = true; render(); }
     }
   }
@@ -1261,6 +1279,10 @@ relayout();
 
 // ===============================================================
 // Photo grid
+// Uses the small copies listed in photos.json (made automatically by
+// the GitHub Action), so only ~2–3 MB loads instead of every full-size
+// photo. Each tile fades in as soon as its own photo arrives.
+// If photos.json isn't there yet, it falls back to the full-size photos.
 // ===============================================================
 const GITHUB_OWNER = "StormfWhite";
 const GITHUB_REPO = "joanna-website";
@@ -1269,18 +1291,7 @@ const PHOTO_SETS = {
   default: { apiPath: "Love",      relPrefix: "" },
   farm:    { apiPath: "Love/Farm", relPrefix: "Farm/" }
 };
-const FALLBACK_IMAGES = [
-  "Bonsai.jpg", "IMG_4306.GIF", "LA hike 2.jpg", "LA hike.jpg", "SF hike 3.jpg",
-  "SF hike.jpg", "SF top 4.jpg", "Soy.jpg",
-  "airport.jpg", "cabin.jpg", "engagement.jpg", "fireworks 2.jpg",
-  "fireworks.jpg", "getty 2.jpg", "getty.jpg", "graduation dinner.jpg",
-  "island.JPG", "mission college.JPEG", "rain funny.jpg", "s+J.jpg",
-  "santa fe lib.jpg", "santa fe statue.jpg", "tiny house 2.jpg",
-  "tiny house.jpg", "top of SF 2.jpg", "top of SF.jpg", "train.jpg",
-  "veggies market.jpg", "water rocks.jpg", "water tower.jpg", "yacht 2.jpg"
-];
-const FARM_FALLBACK_IMAGES = [];
-const CROP_OVERRIDES = { "cabin.jpg": "30% 40%" };
+const CROP_OVERRIDES = { "cabin.jpg": "30% 40%" }; // by original file name
 const PORTRAIT_THRESHOLD = 0.95;
 const landscapeSlots = ["p1","p2","p3","p4","p5","p6","p7","p8","p9","p10",
   "p11","p12","p13","p14","p15","p16","p17","p18"];
@@ -1294,52 +1305,79 @@ function shuffle(arr) {
   }
   return a;
 }
-async function fetchImageList(apiPath, fallback) {
-  const base = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents`;
-  const url = apiPath ? `${base}/${apiPath}?ref=${GITHUB_BRANCH}` : `${base}?ref=${GITHUB_BRANCH}`;
+const urlFor = (path) => path.split("/").map(encodeURIComponent).join("/");
+
+// Load a photo once; later requests reuse the same download.
+const preloadCache = new Map();
+function preload(path) {
+  if (!preloadCache.has(path)) {
+    preloadCache.set(path, new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = urlFor(path);
+    }));
+  }
+  return preloadCache.get(path);
+}
+
+// ---- Photo lists ----
+let manifestPromise = null;
+function loadManifest() {
+  if (!manifestPromise) {
+    manifestPromise = fetch("photos.json")
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }
+  return manifestPromise;
+}
+// Old slow way, only used if photos.json is missing
+async function listAndMeasure(setKey) {
+  const { apiPath, relPrefix } = PHOTO_SETS[setKey];
+  let names = [];
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("GitHub API request failed: " + res.status);
-    const data = await res.json();
-    const names = data
-      .filter(item => item.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(item.name))
-      .map(item => item.name);
-    if (names.length === 0) throw new Error("No images found via API");
-    return names;
-  } catch (err) {
-    console.warn(`Falling back to hardcoded image list for "${apiPath}":`, err);
-    return fallback;
-  }
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${apiPath}?ref=${GITHUB_BRANCH}`);
+    if (res.ok) {
+      names = (await res.json())
+        .filter((item) => item.type === "file" && /\.(jpe?g|png|webp|gif)$/i.test(item.name))
+        .map((item) => item.name);
+    }
+  } catch (err) { console.warn("Photo list failed:", err); }
+  const results = await Promise.all(names.map(async (name) => {
+    const path = relPrefix + name;
+    const img = await preload(path);
+    return img ? { path, name, ratio: img.naturalWidth / img.naturalHeight } : null;
+  }));
+  return results.filter(Boolean);
 }
-function probe(filename, relPrefix) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve({ filename, ratio: img.naturalWidth / img.naturalHeight });
-    img.onerror = () => resolve(null);
-    img.src = relPrefix + encodeURIComponent(filename);
-  });
-}
-function setLayerImage(layer, filename, relPrefix) {
-  if (filename) {
-    layer.style.backgroundImage = `url(${relPrefix}${encodeURIComponent(filename)})`;
-    layer.style.backgroundPosition = CROP_OVERRIDES[filename] || "center";
+const setCache = {};
+async function loadSet(setKey) {
+  if (setCache[setKey]) return setCache[setKey];
+  const manifest = await loadManifest();
+  let list;
+  if (manifest && Array.isArray(manifest[setKey]) && manifest[setKey].length) {
+    list = manifest[setKey].map((e) => ({ path: e.file, name: e.name, ratio: e.ratio }));
   } else {
-    layer.style.backgroundImage = "none";
+    list = await listAndMeasure(setKey);
   }
+  setCache[setKey] = list;
+  return list;
 }
-function computeAssignment(valid) {
-  const landscapePool = shuffle(valid.filter(r => r.ratio >= PORTRAIT_THRESHOLD).map(r => r.filename));
-  const tallPool = shuffle(valid.filter(r => r.ratio < PORTRAIT_THRESHOLD).map(r => r.filename));
+
+function computeAssignment(list) {
+  let wide = shuffle(list.filter((r) => r.ratio >= PORTRAIT_THRESHOLD));
+  let tall = shuffle(list.filter((r) => r.ratio < PORTRAIT_THRESHOLD));
+  if (!wide.length) wide = tall;
+  if (!tall.length) tall = wide;
   const assignment = {};
-  landscapeSlots.forEach((slot, i) => {
-    if (landscapePool.length > 0) assignment[slot] = landscapePool[i % landscapePool.length];
-  });
-  tallSlots.forEach((slot, i) => {
-    if (tallPool.length > 0) assignment[slot] = tallPool[i % tallPool.length];
-  });
+  if (!wide.length) return assignment;
+  landscapeSlots.forEach((slot, i) => { assignment[slot] = wide[i % wide.length]; });
+  tallSlots.forEach((slot, i) => { assignment[slot] = tall[i % tall.length]; });
   return assignment;
 }
 
+// ---- Grid cells: two stacked layers each, for crossfades ----
 const grid = document.getElementById("grid");
 const ALL_SLOTS = [...landscapeSlots, ...tallSlots];
 const cellMap = {};
@@ -1348,56 +1386,66 @@ ALL_SLOTS.forEach((area) => {
   cell.className = "cell";
   cell.style.gridArea = area;
   const layerA = document.createElement("div");
-  layerA.className = "cell-layer active";
+  layerA.className = "cell-layer";
   const layerB = document.createElement("div");
   layerB.className = "cell-layer";
   cell.appendChild(layerA);
   cell.appendChild(layerB);
   grid.appendChild(cell);
-  cellMap[area] = { layers: [layerA, layerB], activeIndex: 0 };
+  cellMap[area] = { layers: [layerA, layerB], activeIndex: 0, shown: false };
 });
+grid.style.opacity = "1"; // show the grid right away; tiles fill in as photos arrive
+
+function setLayerImage(layer, entry) {
+  if (entry) {
+    layer.style.backgroundImage = `url("${urlFor(entry.path)}")`;
+    layer.style.backgroundPosition = CROP_OVERRIDES[entry.name] || "center";
+  } else {
+    layer.style.backgroundImage = "none";
+  }
+}
 
 const CELL_STAGGER_MS = 40;
-let firstRenderDone = false;
-function renderGrid(valid, relPrefix) {
-  const assignment = computeAssignment(valid);
-  if (!firstRenderDone) {
-    ALL_SLOTS.forEach((area) => {
-      const { layers, activeIndex } = cellMap[area];
-      setLayerImage(layers[activeIndex], assignment[area], relPrefix);
-    });
-    firstRenderDone = true;
-    void grid.offsetWidth;
-    requestAnimationFrame(() => { grid.style.opacity = "1"; });
-    return;
-  }
-  shuffle(ALL_SLOTS).forEach((area, i) => {
+let renderId = 0;
+function renderGrid(list) {
+  const assignment = computeAssignment(list);
+  const id = ++renderId;
+  const order = shuffle(ALL_SLOTS);
+  order.forEach((area, i) => {
     const state = cellMap[area];
-    setTimeout(() => {
+    const entry = assignment[area];
+    const delay = state.shown ? i * CELL_STAGGER_MS : 0; // first load: no ripple, just as-ready
+    setTimeout(async () => {
+      if (entry) await preload(entry.path); // never fade to a half-loaded photo
+      if (id !== renderId) return;           // a newer swap started meanwhile
+      if (!state.shown) {
+        const layer = state.layers[state.activeIndex];
+        setLayerImage(layer, entry);
+        void layer.offsetWidth;
+        layer.classList.add("active");
+        state.shown = true;
+        return;
+      }
       const nextIndex = state.activeIndex === 0 ? 1 : 0;
       const nextLayer = state.layers[nextIndex];
-      setLayerImage(nextLayer, assignment[area], relPrefix);
+      setLayerImage(nextLayer, entry);
       void nextLayer.offsetWidth;
       state.layers[state.activeIndex].classList.remove("active");
       nextLayer.classList.add("active");
       state.activeIndex = nextIndex;
-    }, i * CELL_STAGGER_MS);
+    }, delay);
   });
 }
 
-const setCache = {};
-async function loadSet(setKey, fallback) {
-  if (setCache[setKey]) return setCache[setKey];
-  const { apiPath, relPrefix } = PHOTO_SETS[setKey];
-  const images = await fetchImageList(apiPath, fallback);
-  const results = await Promise.all(images.map(f => probe(f, relPrefix)));
-  const valid = results.filter(Boolean);
-  setCache[setKey] = valid;
-  return valid;
-}
-
-loadSet("default", FALLBACK_IMAGES).then((valid) => {
-  renderGrid(valid, PHOTO_SETS.default.relPrefix);
+loadSet("default").then((list) => {
+  renderGrid(list);
+  // On computers, quietly fetch the Farm photos afterward so the swap
+  // is instant later. (Skipped on phones to save their data.)
+  if (HAS_HOVER) {
+    setTimeout(() => {
+      loadSet("farm").then((farm) => farm.forEach((e) => preload(e.path)));
+    }, 2500);
+  }
 });
 
 // Farm photos: shown while the RSVP form is open or Directions is hovered.
@@ -1408,17 +1456,17 @@ const Farm = (function () {
     if (showing) return;
     showing = true;
     const t = ++token;
-    const valid = await loadSet("farm", FARM_FALLBACK_IMAGES);
+    const valid = await loadSet("farm");
     if (t !== token) return;
-    if (valid.length > 0) renderGrid(valid, PHOTO_SETS.farm.relPrefix);
+    if (valid.length > 0) renderGrid(valid);
   }
   async function hide() {
     if (!showing) return;
     showing = false;
     const t = ++token;
-    const valid = await loadSet("default", FALLBACK_IMAGES);
+    const valid = await loadSet("default");
     if (t !== token) return;
-    renderGrid(valid, PHOTO_SETS.default.relPrefix);
+    renderGrid(valid);
   }
   return { show, hide };
 })();
