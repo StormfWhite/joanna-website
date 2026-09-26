@@ -1,325 +1,108 @@
-/**
- * RSVP connector for the wedding photo page.
- *
- * What it does:
- *   - Hands the photo page the questions from your Google Form (so the page
- *     always matches the form, even if you edit questions later).
- *   - Takes the answers from the photo page and submits them INTO your Google
- *     Form, so they show up in Responses (and your linked Sheet) like normal.
- *   - Tells the page when a submission really went through.
- *
- * SETUP (one time, about 5 minutes):
- *   1. Open your form's editor:
- *      https://docs.google.com/forms/d/17zKETqGagHlxifxhmOaSNXil-bjDae8_wkQnbSqLJKw/edit
- *   2. Click the ⋮ menu (top right) → "Apps Script".
- *   3. Delete whatever is in Code.gs and paste in this whole file. Save.
- *   4. Click "Deploy" → "New deployment".
- *        - Gear icon → "Web app"
- *        - Execute as: Me
- *        - Who has access: Anyone
- *      Click Deploy, approve the permission prompts (Google will warn that the
- *      app isn't verified — click "Advanced" → "Go to … (unsafe)"; it's your
- *      own script).
- *   5. Copy the "Web app URL" (ends in /exec) and paste it into Photos.html:
- *        const RSVP_API_URL = "https://script.google.com/macros/s/…/exec";
- *   6. In the form's Settings → Responses, turn OFF "Limit to 1 response"
- *      and set "Collect email addresses" to "Do not collect" (or "Responder
- *      input"). Submissions from the page arrive through this script, which
- *      runs as you, so those settings would block every RSVP after the first.
- *
- * ADD NAME + EMAIL QUESTIONS (one time):
- *   In the Apps Script editor, pick "addNameAndEmailQuestions" in the
- *   function dropdown at the top and click Run. It adds "Your name" and
- *   "Your email" (both required, email checked for a valid address) as the
- *   first two questions of the form. Running it again won't add duplicates.
- *
- * If you change this file later: Deploy → Manage deployments → pencil icon →
- * Version: "New version" → Deploy. (The URL stays the same.)
- *
- * Supported question types: short answer, paragraph, multiple choice
- * (including "Other"), checkboxes (including "Other"), dropdown, linear scale,
- * date, time, plus section titles and page breaks. Other types (grids, file
- * upload, images, videos) are left off the page. Section jumps are followed:
- * "Go to section based on answer" on multiple-choice and dropdown questions,
- * and each section's "After section N, continue to…" setting.
- */
+# Makes small, fast-loading copies of the background photos.
+# Runs by itself whenever photos in Love/ or Love/Farm/ change, and you can
+# also run it by hand: Actions tab → "Shrink photos" → "Run workflow".
+# Your original photos are never changed.
+name: Shrink photos
 
-const T = FormApp.ItemType;
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Love/**"
+      - "!Love/small/**"
+      - "!Love/Farm/small/**"
+      - "!Love/photos.json"
+  workflow_dispatch:
 
-function form_() {
-  return FormApp.getActiveForm();
-}
+permissions:
+  contents: write
 
-function json_(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+jobs:
+  shrink:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-// GET ?action=schema          → the form's questions
-// GET ?action=status&id=XYZ   → whether that response still exists
-function doGet(e) {
-  const p = (e && e.parameter) || {};
-  try {
-    if (p.action === "schema") {
-      // Reading the form is the slow part, so keep a copy for 5 minutes.
-      // (After you edit questions, the page can take up to 5 minutes to match.)
-      const cache = CacheService.getScriptCache();
-      let out = cache.get("schema");
-      if (!out) {
-        out = JSON.stringify(getSchema_());
-        try { cache.put("schema", out, 300); } catch (err) { /* too big to cache; fine */ }
-      }
-      return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
-    }
-    if (p.action === "status") return json_(getStatus_(p.id));
-    return json_({ ok: false, error: "Unknown action" });
-  } catch (err) {
-    return json_({ ok: false, error: String(err) });
-  }
-}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-// POST {action:"submit", answers:[{id, value}], replaceId}
-function doPost(e) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    const body = JSON.parse(e.postData.contents);
-    if (body.action === "submit") return json_(submit_(body));
-    return json_({ ok: false, error: "Unknown action" });
-  } catch (err) {
-    return json_({ ok: false, error: String(err) });
-  } finally {
-    lock.releaseLock();
-  }
-}
+      - name: Install image tools
+        run: pip install pillow
 
-// Turns Google's section-jump settings into something the page understands
-function isNav_(type, name) {
-  return type != null && (type == FormApp.PageNavigationType[name] || String(type) === name);
-}
+      - name: Make small copies + photos.json
+        run: |
+          cat > /tmp/build_photos.py << 'PYEOF'
+          """
+          Makes small, fast-loading copies of the background photos and a list of them.
 
-function navOf_(type, target) {
-  if (type == null) return null;
-  if (isNav_(type, "SUBMIT")) return { t: "submit" };
-  if (isNav_(type, "RESTART")) return { t: "restart" }; // "Go to section 1"
-  if (isNav_(type, "GO_TO_PAGE")) return target ? { t: "goto", to: target.getId() } : { t: "restart" };
-  if (isNav_(type, "CONTINUE")) return { t: "continue" };
-  return null;
-}
+            Love/small/<name>.jpg        small copies of the photos in Love/
+            Love/Farm/small/<name>.jpg   small copies of the photos in Love/Farm/
+            Love/photos.json             every photo + its shape, so the page doesn't
+                                         have to download photos just to measure them
 
-function choiceNav_(choice) {
-  try {
-    const type = choice.getPageNavigationType();
-    return navOf_(type, isNav_(type, "GO_TO_PAGE") ? choice.getGotoPage() : null);
-  } catch (err) {
-    return null;
-  }
-}
+          Your original photos are never changed. Run automatically by the GitHub
+          Action in .github/workflows/photos.yml whenever you add or change photos.
+          """
+          import json, os, sys
+          from PIL import Image, ImageOps
 
-function pageBreakNav_(pb) {
-  try {
-    const type = pb.getPageNavigationType();
-    return navOf_(type, isNav_(type, "GO_TO_PAGE") ? pb.getGoToPage() : null);
-  } catch (err) {
-    return null;
-  }
-}
+          ROOT = sys.argv[1] if len(sys.argv) > 1 else "."
+          LOVE = os.path.join(ROOT, "Love")
+          SETS = {"default": "", "farm": "Farm"}   # set name -> folder inside Love/
+          MAX_SIDE = 1000       # longest edge of the small copies, in pixels
+          QUALITY = 78
+          EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
-/**
- * Handy for checking: pick "showSchema" in the function dropdown and click Run.
- * The Execution log shows exactly what the photo page receives, including
- * every "go to section" rule.
- */
-function showSchema() {
-  Logger.log(JSON.stringify(getSchema_(), null, 2));
-}
+          manifest = {}
+          for set_name, sub in SETS.items():
+              src_dir = os.path.join(LOVE, sub)
+              out_dir = os.path.join(src_dir, "small")
+              if not os.path.isdir(src_dir):
+                  manifest[set_name] = []
+                  continue
+              os.makedirs(out_dir, exist_ok=True)
+              entries, keep = [], set()
+              for name in sorted(os.listdir(src_dir), key=str.lower):
+                  src = os.path.join(src_dir, name)
+                  if not os.path.isfile(src) or not name.lower().endswith(EXTS):
+                      continue
+                  out_name = os.path.splitext(name)[0] + ".jpg"
+                  out = os.path.join(out_dir, out_name)
+                  try:
+                      with Image.open(src) as im:
+                          im = ImageOps.exif_transpose(im)      # respect phone rotation
+                          w, h = im.size
+                          im = im.convert("RGB")
+                          im.thumbnail((MAX_SIDE, MAX_SIDE), Image.LANCZOS)
+                          im.save(out, "JPEG", quality=QUALITY, optimize=True, progressive=True)
+                  except Exception as e:
+                      print(f"  skipped {os.path.join(sub, name)} ({e})")
+                      continue
+                  keep.add(out_name)
+                  rel = "/".join(p for p in (sub, "small", out_name) if p)
+                  entries.append({"file": rel, "name": name, "ratio": round(w / h, 4)})
+              # remove small copies whose original was deleted
+              for old in os.listdir(out_dir):
+                  if old not in keep:
+                      os.remove(os.path.join(out_dir, old))
+              manifest[set_name] = entries
+              print(f"{set_name}: {len(entries)} photos")
 
-function getSchema_() {
-  const form = form_();
-  const pages = [{ id: 0, title: "", help: "", items: [] }];
+          with open(os.path.join(LOVE, "photos.json"), "w") as f:
+              json.dump(manifest, f, indent=1)
+          PYEOF
+          python /tmp/build_photos.py .
 
-  form.getItems().forEach(function (item) {
-    const base = { id: item.getId(), title: item.getTitle(), help: item.getHelpText() };
-    let q = null;
-
-    switch (item.getType()) {
-      case T.PAGE_BREAK: {
-        // A page break holds the "after the previous section, go to…" setting
-        pages[pages.length - 1].after = pageBreakNav_(item.asPageBreakItem());
-        pages.push({ id: base.id, title: base.title, help: base.help, items: [] });
-        return;
-      }
-      case T.SECTION_HEADER:
-        q = Object.assign(base, { kind: "header" });
-        break;
-      case T.TEXT: {
-        const it = item.asTextItem();
-        q = Object.assign(base, { kind: "text", required: it.isRequired() });
-        break;
-      }
-      case T.PARAGRAPH_TEXT: {
-        const it = item.asParagraphTextItem();
-        q = Object.assign(base, { kind: "paragraph", required: it.isRequired() });
-        break;
-      }
-      case T.MULTIPLE_CHOICE: {
-        const it = item.asMultipleChoiceItem();
-        const choices = it.getChoices();
-        const nav = choices.map(choiceNav_);
-        q = Object.assign(base, {
-          kind: "radio",
-          required: it.isRequired(),
-          choices: choices.map(function (c) { return c.getValue(); }),
-          other: it.hasOtherOption()
-        });
-        if (nav.some(function (n) { return n; })) q.nav = nav;
-        break;
-      }
-      case T.CHECKBOX: {
-        const it = item.asCheckboxItem();
-        q = Object.assign(base, {
-          kind: "checkbox",
-          required: it.isRequired(),
-          choices: it.getChoices().map(function (c) { return c.getValue(); }),
-          other: it.hasOtherOption()
-        });
-        break;
-      }
-      case T.LIST: {
-        const it = item.asListItem();
-        const choices = it.getChoices();
-        const nav = choices.map(choiceNav_);
-        q = Object.assign(base, {
-          kind: "select",
-          required: it.isRequired(),
-          choices: choices.map(function (c) { return c.getValue(); })
-        });
-        if (nav.some(function (n) { return n; })) q.nav = nav; // dropdowns can branch too
-        break;
-      }
-      case T.SCALE: {
-        const it = item.asScaleItem();
-        q = Object.assign(base, {
-          kind: "scale",
-          required: it.isRequired(),
-          low: it.getLowerBound(),
-          high: it.getUpperBound(),
-          lowLabel: it.getLeftLabel(),
-          highLabel: it.getRightLabel()
-        });
-        break;
-      }
-      case T.DATE: {
-        const it = item.asDateItem();
-        q = Object.assign(base, { kind: "date", required: it.isRequired() });
-        break;
-      }
-      case T.TIME: {
-        const it = item.asTimeItem();
-        q = Object.assign(base, { kind: "time", required: it.isRequired() });
-        break;
-      }
-      default:
-        return; // not shown on the page
-    }
-    pages[pages.length - 1].items.push(q);
-  });
-
-  return {
-    ok: true,
-    title: form.getTitle(),
-    description: form.getDescription(),
-    pages: pages.filter(function (p) { return p.items.length || p.title || p.help; })
-  };
-}
-
-function getStatus_(id) {
-  if (!id) return { ok: true, submitted: false };
-  try {
-    form_().getResponse(id);
-    return { ok: true, submitted: true };
-  } catch (err) {
-    return { ok: true, submitted: false };
-  }
-}
-
-function submit_(body) {
-  const form = form_();
-  const response = form.createResponse();
-
-  (body.answers || []).forEach(function (a) {
-    const item = form.getItemById(Number(a.id));
-    const v = a.value;
-    if (!item || v === "" || v == null || (Array.isArray(v) && v.length === 0)) return;
-
-    switch (item.getType()) {
-      case T.TEXT:
-        response.withItemResponse(item.asTextItem().createResponse(String(v)));
-        break;
-      case T.PARAGRAPH_TEXT:
-        response.withItemResponse(item.asParagraphTextItem().createResponse(String(v)));
-        break;
-      case T.MULTIPLE_CHOICE:
-        response.withItemResponse(item.asMultipleChoiceItem().createResponse(String(v)));
-        break;
-      case T.CHECKBOX:
-        response.withItemResponse(item.asCheckboxItem().createResponse([].concat(v).map(String)));
-        break;
-      case T.LIST:
-        response.withItemResponse(item.asListItem().createResponse(String(v)));
-        break;
-      case T.SCALE:
-        response.withItemResponse(item.asScaleItem().createResponse(Number(v)));
-        break;
-      case T.DATE: {
-        const d = String(v).split("-").map(Number); // "YYYY-MM-DD"
-        response.withItemResponse(item.asDateItem().createResponse(new Date(d[0], d[1] - 1, d[2])));
-        break;
-      }
-      case T.TIME: {
-        const t = String(v).split(":").map(Number); // "HH:MM"
-        response.withItemResponse(item.asTimeItem().createResponse(t[0], t[1]));
-        break;
-      }
-    }
-  });
-
-  const submitted = response.submit();
-
-  // "Change my response": remove the old one so the form only keeps the latest.
-  // (A linked Google Sheet keeps its old row; the newest row is the current one.)
-  if (body.replaceId) {
-    try { form.deleteResponse(body.replaceId); } catch (err) { /* already gone */ }
-  }
-
-  return { ok: true, id: submitted.getId() };
-}
-
-/**
- * Run this once from the editor (see the note at the top).
- * Adds required "Your name" and "Your email" questions to the start of the form.
- */
-function addNameAndEmailQuestions() {
-  const form = form_();
-  const titles = form.getItems().map(function (i) { return i.getTitle().trim().toLowerCase(); });
-
-  if (titles.indexOf("your email") === -1) {
-    const email = form.addTextItem()
-      .setTitle("Your email")
-      .setRequired(true)
-      .setValidation(
-        FormApp.createTextValidation()
-          .setHelpText("Please enter a valid email address.")
-          .requireTextIsEmail()
-          .build()
-      );
-    form.moveItem(email, 0);
-  }
-  if (titles.indexOf("your name") === -1) {
-    const name = form.addTextItem().setTitle("Your name").setRequired(true);
-    form.moveItem(name, 0); // name first, then email
-  }
-  Logger.log("Done. The first two questions are now: " +
-    form.getItems().slice(0, 2).map(function (i) { return i.getTitle(); }).join(", "));
-}
+      - name: Save them to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add -A Love/small Love/Farm/small Love/photos.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Update small photos"
+            git pull --rebase   # in case the other workflow saved something first
+            git push
+          fi
