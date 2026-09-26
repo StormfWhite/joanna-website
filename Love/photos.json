@@ -1,0 +1,296 @@
+{
+ "default": [
+  {
+   "file": "small/airport.jpg",
+   "name": "airport.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/Bonsai.jpg",
+   "name": "Bonsai.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/cabin.jpg",
+   "name": "cabin.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "small/engagement.jpg",
+   "name": "engagement.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/fireworks 2.jpg",
+   "name": "fireworks 2.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/fireworks.jpg",
+   "name": "fireworks.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "small/getty 2.jpg",
+   "name": "getty 2.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/getty.jpg",
+   "name": "getty.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/graduation dinner.jpg",
+   "name": "graduation dinner.jpg",
+   "ratio": 1.0
+  },
+  {
+   "file": "small/island.jpg",
+   "name": "island.JPG",
+   "ratio": 1.508
+  },
+  {
+   "file": "small/LA hike 2.jpg",
+   "name": "LA hike 2.jpg",
+   "ratio": 0.6806
+  },
+  {
+   "file": "small/LA hike.jpg",
+   "name": "LA hike.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/mission college.jpg",
+   "name": "mission college.JPEG",
+   "ratio": 0.5326
+  },
+  {
+   "file": "small/rain funny.jpg",
+   "name": "rain funny.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/s+J.jpg",
+   "name": "s+J.jpg",
+   "ratio": 0.6814
+  },
+  {
+   "file": "small/santa fe lib.jpg",
+   "name": "santa fe lib.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/santa fe statue.jpg",
+   "name": "santa fe statue.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/SF hike 3.jpg",
+   "name": "SF hike 3.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "small/SF hike.jpg",
+   "name": "SF hike.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/SF top 4.jpg",
+   "name": "SF top 4.jpg",
+   "ratio": 1.5
+  },
+  {
+   "file": "small/Soy.jpg",
+   "name": "Soy.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/tiny house 2.jpg",
+   "name": "tiny house 2.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/tiny house.jpg",
+   "name": "tiny house.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/top of SF 2.jpg",
+   "name": "top of SF 2.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/top of SF.jpg",
+   "name": "top of SF.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "small/train.jpg",
+   "name": "train.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/veggies market.jpg",
+   "name": "veggies market.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "small/water rocks.jpg",
+   "name": "water rocks.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "small/water tower.jpg",
+   "name": "water tower.jpg",
+   "ratio": 0.6083
+  },
+  {
+   "file": "small/yacht 2.jpg",
+   "name": "yacht 2.jpg",
+   "ratio": 1.3333
+  }
+ ],
+ "farm": [
+  {
+   "file": "Farm/small/78009423628__351CDC22-784E-4527-8FD8-5A95721B1A49.jpg",
+   "name": "78009423628__351CDC22-784E-4527-8FD8-5A95721B1A49.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/caterpiller.jpg",
+   "name": "caterpiller.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/farm cloudy.jpg",
+   "name": "farm cloudy.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/Farm road.jpg",
+   "name": "Farm road.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/Farm sunset.jpg",
+   "name": "Farm sunset.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/Farm truck.jpg",
+   "name": "Farm truck.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/foggy farm.jpg",
+   "name": "foggy farm.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/grasshopper.jpg",
+   "name": "grasshopper.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_3011.jpg",
+   "name": "IMG_3011.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_4880.jpg",
+   "name": "IMG_4880.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_7722.jpg",
+   "name": "IMG_7722.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_8874.jpg",
+   "name": "IMG_8874.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8882.jpg",
+   "name": "IMG_8882.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8883.jpg",
+   "name": "IMG_8883.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8884 (1).jpg",
+   "name": "IMG_8884 (1).jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_8884.jpg",
+   "name": "IMG_8884.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_8886.jpg",
+   "name": "IMG_8886.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8887.jpg",
+   "name": "IMG_8887.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8888.jpg",
+   "name": "IMG_8888.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8889.jpg",
+   "name": "IMG_8889.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8890.jpg",
+   "name": "IMG_8890.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8891.jpg",
+   "name": "IMG_8891.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8892.jpg",
+   "name": "IMG_8892.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_8893.jpg",
+   "name": "IMG_8893.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8895.jpg",
+   "name": "IMG_8895.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_8896.jpg",
+   "name": "IMG_8896.jpg",
+   "ratio": 1.3333
+  },
+  {
+   "file": "Farm/small/IMG_9170.jpg",
+   "name": "IMG_9170.jpg",
+   "ratio": 0.75
+  },
+  {
+   "file": "Farm/small/IMG_9665.jpg",
+   "name": "IMG_9665.jpg",
+   "ratio": 0.75
+  }
+ ]
+}
