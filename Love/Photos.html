@@ -289,6 +289,9 @@ body.tab-open .scrim { opacity: 1; }
 @media (hover: hover) and (pointer: fine) {
   .rf-btn:not(:disabled):hover { background: #6b4c3a; color: #f7f4ef; }
 }
+.rf-copy { margin: 4px 0 10px; font-size: 16px; }
+.rf-copy[hidden] { display: none; }
+.rf-note { margin-top: 6px; font-size: 15px; font-style: italic; color: #6b5f55; }
 .rf-status { margin: 10px 0 0; font-size: 15px; font-style: italic; color: #9b4a3a; }
 .rf-center { margin: 0; text-align: center; font-size: 16px; line-height: 1.5; }
 .rsvp-inner a { font-style: italic; color: #6b4c3a; }
@@ -789,12 +792,19 @@ const Rsvp = (function () {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const isEmailQ = (q) => q.kind === "text" && /e-?mail/i.test(q.title);
   const isNameQ = (q) => q.kind === "text" && /\bname\b/i.test(q.title);
+  const hasEmailQ = () => !!(schema && schema.pages && schema.pages.some((p) => p.items.some(isEmailQ)));
+  // Where guests should land from the link in their email: the page they're on
+  // (inside Squarespace that's the Squarespace site, not this frame).
+  const siteUrl = () => {
+    try { if (window.top === window.self) return location.href.split("?")[0]; } catch (e) {}
+    return document.referrer || location.href.split("?")[0];
+  };
   const looksLikeEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isEmpty = (v) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
 
   // ---- Saved state on this device ----
   // status: "new" (never opened) | "started" (opened, not sent) | "done" (sent)
-  let S = { status: "new", answers: {}, page: 0, history: [], responseId: null };
+  let S = { status: "new", answers: {}, page: 0, history: [], responseId: null, copy: true };
   try { Object.assign(S, JSON.parse(store.get(KEY)) || {}); } catch (e) {}
   if (!Array.isArray(S.history)) S.history = [];
   if (S.status === "new" && store.get("rsvpSubmitted") === "true") S.status = "done"; // from the old version
@@ -805,6 +815,7 @@ const Rsvp = (function () {
   let schemaFailed = false;
   let expanded = false, pinned = false, editing = false, sending = false;
   let sendError = "";
+  let copyNote = ""; // message after "Email me a copy" in the thanks panel
 
   // ---- What to show ----
   function view() {
@@ -829,7 +840,10 @@ const Rsvp = (function () {
     box.dataset.view = v;
     inner.classList.toggle("fit", v !== "form");
     if (v === "done") {
-      inner.innerHTML = `<p class="rf-center"><a href="#" data-nav="change">Change my response</a></p>`;
+      const copyLink = hasEmailQ() && S.responseId && RSVP_API_URL
+        ? ` &nbsp;·&nbsp; <a href="#" data-nav="copy">Email me a copy</a>` : "";
+      inner.innerHTML = `<p class="rf-center"><a href="#" data-nav="change">Change my response</a>${copyLink}</p>`
+        + (copyNote ? `<p class="rf-center rf-note">${esc(copyNote)}</p>` : "");
     } else if (v === "loading") {
       inner.innerHTML = `<p class="rf-center">Loading…</p>`;
     } else if (v === "error") {
@@ -936,6 +950,8 @@ const Rsvp = (function () {
     const last = nextTarget() === "submit";
     btn.dataset.nav = last ? "send" : "next";
     btn.textContent = mainLabelFor(last);
+    const copyRow = inner.querySelector(".rf-copy");
+    if (copyRow) copyRow.hidden = !last;
   }
   const mainLabelFor = mainButtonLabel;
 
@@ -954,6 +970,11 @@ const Rsvp = (function () {
       : (editing ? `<button type="button" class="rf-btn" data-nav="cancel">Never mind</button>` : "");
     const step = pages.length > 1 && !hasBranching() ? `<span class="rf-step">${S.page + 1} of ${pages.length}</span>` : "";
     const mainLabel = mainButtonLabel(last);
+    if (hasEmailQ()) {
+      html += `<label class="rf-choice rf-copy"${last ? "" : " hidden"}>
+        <input type="checkbox" data-copy${S.copy !== false ? " checked" : ""}>
+        <span>Email me a copy of my answers</span></label>`;
+    }
     html += `<div class="rf-nav">${left}${step}
       <button type="button" class="rf-btn primary" data-nav="${last ? "send" : "next"}"${sending ? " disabled" : ""}>${mainLabel}</button></div>`;
     if (sendError) html += `<p class="rf-status">${esc(sendError)}</p>`;
@@ -975,6 +996,8 @@ const Rsvp = (function () {
   }
   function captureAnswers() {
     if (view() !== "form") return;
+    const copyBox = inner.querySelector("[data-copy]");
+    if (copyBox) S.copy = copyBox.checked;
     pageItems().forEach((q) => { if (q.kind !== "header") S.answers[q.id] = readAnswer(q); });
     save();
   }
@@ -1018,7 +1041,12 @@ const Rsvp = (function () {
     if (!btn) return;
     e.preventDefault();
     const nav = btn.dataset.nav;
+    if (nav === "copy") {
+      sendCopy();
+      return;
+    }
     if (nav === "change") {
+      copyNote = "";
       editing = true;
       S.page = 0;
       S.history = [];
@@ -1066,12 +1094,19 @@ const Rsvp = (function () {
       const res = await fetch(RSVP_API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" }, // keeps the request simple for Google
-        body: JSON.stringify({ action: "submit", answers, replaceId: editing ? S.responseId : null })
+        body: JSON.stringify({
+          action: "submit",
+          answers,
+          replaceId: editing ? S.responseId : null,
+          sendCopy: hasEmailQ() && S.copy !== false,
+          siteUrl: siteUrl()
+        })
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || "Submit failed");
       S.status = "done";
       S.responseId = data.id;
+      copyNote = data.emailed ? "A copy is on its way to your inbox." : "";
       S.page = 0;
       S.history = [];
       editing = false;
@@ -1095,6 +1130,48 @@ const Rsvp = (function () {
     store.set(SCHEMA_KEY, JSON.stringify(data));
     if (changed && !busy) render();
     return true;
+  }
+
+  async function sendCopy() {
+    copyNote = "Sending…";
+    render();
+    try {
+      const res = await fetch(RSVP_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "sendCopy", id: S.responseId, siteUrl: siteUrl() })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Email failed");
+      copyNote = "Sent! Check your inbox.";
+    } catch (err) {
+      console.error("Copy email failed:", err);
+      copyNote = "Couldn't send it just now. Try again in a bit.";
+    }
+    render();
+  }
+
+  // Opening the "change your RSVP" link from the email, on any device:
+  // pick up that RSVP and its answers.
+  async function loadFromLink() {
+    let id = null;
+    try { id = new URLSearchParams(location.search).get("rsvp"); } catch (e) {}
+    if (!id || !RSVP_API_URL) return;
+    try {
+      const res = await fetch(`${RSVP_API_URL}?action=response&id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (!data.ok || !data.exists) return;
+      S.status = "done";
+      S.responseId = id;
+      S.answers = data.answers || {};
+      S.page = 0;
+      S.history = [];
+      save();
+      render();
+      expand(); // show "Change my response" right away
+    } catch (err) {
+      console.warn("Couldn't load RSVP from link:", err);
+    }
   }
 
   async function loadSchema() {
@@ -1212,7 +1289,7 @@ const Rsvp = (function () {
       new ResizeObserver(() => relayout()).observe(head);
     }
     loadSchema();
-    verify();
+    if (/[?&]rsvp=/.test(location.search)) loadFromLink(); else verify();
   }
 
   return { collapse, resize, init, isExpanded: () => expanded };
