@@ -18,6 +18,9 @@
   /* Phones: how far down from the top of the screen the tabs start,
      to clear the Squarespace header. Raise or lower this one number. */
   --phone-top-offset: 12px;
+  /* Height of the Squarespace header floating over this page. Sent in by
+     the Squarespace embed script; buttons stay clear of it. */
+  --header-h: 0px;
 }
 
 /* ---------- Page + photo grid ---------- */
@@ -144,7 +147,7 @@ body.tab-open .scrim { opacity: 1; }
    Google Form, sized exactly to fit whatever is showing. */
 .rsvp {
   position: fixed;
-  top: calc(24px + env(safe-area-inset-top, 0px));
+  top: calc(24px + env(safe-area-inset-top, 0px) + var(--header-h));
   right: 0;
   z-index: 1020;
   width: var(--rsvp-w-closed, auto);
@@ -302,7 +305,7 @@ body.tab-open .scrim { opacity: 1; }
 /* ---------- Left side tabs (desktop) ---------- */
 .side-tabs {
   position: fixed;
-  top: 0;
+  top: var(--header-h);
   bottom: 0;
   left: 0;
   display: flex;
@@ -534,7 +537,7 @@ html.room-for-map .map-panel { display: block; }
 
   /* Tabs sit in a 2×2 block at the top, clear of the notch/status bar. */
   .side-tabs {
-    top: max(var(--phone-top-offset), calc(env(safe-area-inset-top, 0px) + 8px));
+    top: calc(max(var(--phone-top-offset), calc(env(safe-area-inset-top, 0px) + 8px)) + var(--header-h));
     right: 0;
     bottom: auto;
     display: grid;
@@ -596,7 +599,7 @@ html.room-for-map .map-panel { display: block; }
   .side-tabs { gap: 3px; }
   .tab-trigger { padding: 10px 18px 10px 12px; font-size: 12.5px; }
   .tab-trigger svg { width: 17px; height: 17px; }
-  .rsvp { top: 12px; }
+  .rsvp { top: calc(12px + var(--header-h)); }
   .rsvp-head { padding: 11px 20px; }
 }
 
@@ -1550,6 +1553,16 @@ const Farm = (function () {
 const directionsTab = document.querySelector(".tab-directions");
 directionsTab.addEventListener("mouseenter", () => Farm.show());
 directionsTab.addEventListener("mouseleave", () => { if (!Rsvp.isExpanded()) Farm.hide(); });
+
+// The Squarespace embed tells us how tall its header is, so the buttons
+// sit just below it while the photos run up underneath it.
+window.addEventListener("message", (e) => {
+  const d = e.data;
+  if (!d || d.type !== "photos:header" || typeof d.height !== "number") return;
+  const h = Math.max(0, Math.min(400, Math.round(d.height)));
+  document.documentElement.style.setProperty("--header-h", h + "px");
+  relayout();
+});
 
 // Start the RSVP once everything it uses exists.
 Rsvp.init();
